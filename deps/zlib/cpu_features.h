@@ -15,6 +15,8 @@ extern int x86_cpu_enable_sse2;
 extern int x86_cpu_enable_ssse3;
 extern int x86_cpu_enable_simd;
 extern int x86_cpu_enable_avx512;
+extern int x86_cpu_enable_3dnow;    /* 3DNow! support */
+extern int ppc_cpu_enable_altivec;  /* Altivec support */
 
 extern int riscv_cpu_enable_rvv;
 extern int riscv_cpu_enable_vclmul;

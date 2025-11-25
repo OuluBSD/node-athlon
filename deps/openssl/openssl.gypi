@@ -1193,23 +1193,26 @@
       '<@(openssl_defines_non_arm)',
       'OPENSSL_BN_ASM_MONT5',
       'OPENSSL_BN_ASM_GF2m',
-      'OPENSSL_IA32_SSE2',
       'BSAES_ASM',
-    ],
+    ] + [
+      'OPENSSL_IA32_SSE2',
+    ] if '<(node_enable_sse2)' == 'true' else [],
     'openssl_defines_x64_mac': [
       '<@(openssl_defines_non_arm)',
       'OPENSSL_BN_ASM_MONT5',
       'OPENSSL_BN_ASM_GF2m',
-      'OPENSSL_IA32_SSE2',
       'BSAES_ASM',
-    ],
+    ] + [
+      'OPENSSL_IA32_SSE2',
+    ] if '<(node_enable_sse2)' == 'true' else [],
     'openssl_defines_x64_win': [
       '<@(openssl_defines_non_arm)',
       'OPENSSL_BN_ASM_MONT5',
       'OPENSSL_BN_ASM_GF2m',
-      'OPENSSL_IA32_SSE2',
       'BSAES_ASM',
-    ],
+    ] + [
+      'OPENSSL_IA32_SSE2',
+    ] if '<(node_enable_sse2)' == 'true' else [],
     'openssl_include_dirs': [
       '.',
       'openssl',

@@ -564,7 +564,14 @@
           'V8_TARGET_OS_WIN',
         ]
       }],
-      ['OS in "linux freebsd openbsd solaris netbsd mac android qnx openharmony" and v8_target_arch=="ia32"', {
+      ['OS in "linux freebsd openbsd solaris netbsd mac android qnx openharmony" and v8_target_arch=="ia32" and node_enable_sse2=="true"', {
+        'cflags': [
+          '-msse2',
+          '-mfpmath=sse',
+          '-mmmx',  # Allows mmintrin.h for MMX intrinsics.
+        ],
+      }],
+      ['OS in "linux freebsd openbsd solaris netbsd mac android qnx openharmony" and v8_target_arch=="x64" and node_enable_sse2=="true"', {
         'cflags': [
           '-msse2',
           '-mfpmath=sse',

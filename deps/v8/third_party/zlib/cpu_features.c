@@ -32,6 +32,9 @@ int ZLIB_INTERNAL x86_cpu_enable_sse2 = 0;
 int ZLIB_INTERNAL x86_cpu_enable_ssse3 = 0;
 int ZLIB_INTERNAL x86_cpu_enable_simd = 0;
 int ZLIB_INTERNAL x86_cpu_enable_avx512 = 0;
+int ZLIB_INTERNAL x86_cpu_enable_3dnow = 0;    /* 3DNow! support */
+
+int ZLIB_INTERNAL ppc_cpu_enable_altivec = 0;  /* Altivec support */
 
 int ZLIB_INTERNAL riscv_cpu_enable_rvv = 0;
 int ZLIB_INTERNAL riscv_cpu_enable_vclmul = 0;
@@ -69,7 +72,7 @@ static void _cpu_check_features(void);
 #if defined(ARMV8_OS_ANDROID) || defined(ARMV8_OS_LINUX) || \
     defined(ARMV8_OS_MACOS) || defined(ARMV8_OS_FUCHSIA) || \
     defined(X86_NOT_WINDOWS) || defined(ARMV8_OS_IOS) || \
-    defined(RISCV_RVV)
+    defined(RISCV_RVV) || defined(__PPC__) || defined(__powerpc__) || defined(__ppc__) || defined(__PPC64__) || defined(__powerpc64__)
 #if !defined(ARMV8_OS_MACOS)
 // _cpu_check_features() doesn't need to do anything on mac/arm since all
 // features are known at build time, so don't call it.
@@ -83,7 +86,7 @@ void ZLIB_INTERNAL cpu_check_features(void)
     pthread_once(&cpu_check_inited_once, _cpu_check_features);
 #endif
 }
-#elif defined(ARMV8_OS_WINDOWS) || defined(X86_WINDOWS)
+#elif defined(ARMV8_OS_WINDOWS) || defined(X86_WINDOWS) || defined(PPC_WINDOWS)
 static INIT_ONCE cpu_check_inited_once = INIT_ONCE_STATIC_INIT;
 static BOOL CALLBACK _cpu_check_features_forwarder(PINIT_ONCE once, PVOID param, PVOID* context)
 {
@@ -166,6 +169,7 @@ static void _cpu_check_features(void)
     int x86_cpu_has_ssse3;
     int x86_cpu_has_sse42;
     int x86_cpu_has_pclmulqdq;
+    int x86_cpu_has_3dnow;
     int abcd[4];
 
 #ifdef _MSC_VER
@@ -187,8 +191,54 @@ static void _cpu_check_features(void)
                           x86_cpu_has_sse42 &&
                           x86_cpu_has_pclmulqdq;
 
+    /* Check for 3DNow! support (AMD-specific extension) */
+    /* 3DNow! is bit 31 of EDX in CPUID function 0x80000001 */
+    int extended_features[4];
+#ifdef _MSC_VER
+    __cpuid(extended_features, 0x80000001);
+#else
+    __cpuid(0x80000001, extended_features[0], extended_features[1], extended_features[2], extended_features[3]);
+#endif
+    x86_cpu_has_3dnow = extended_features[3] & 0x80000000;  /* Bit 31 in EDX */
+    x86_cpu_enable_3dnow = x86_cpu_has_3dnow;
+
 #ifdef CRC32_SIMD_AVX512_PCLMUL
     x86_cpu_enable_avx512 = _xgetbv(0) & 0x00000040;
+#endif
+}
+#elif defined(__PPC__) || defined(__powerpc__) || defined(__ppc__) || defined(__PPC64__) || defined(__powerpc64__)
+/*
+ * PowerPC Altivec detection
+ */
+static void _cpu_check_features(void)
+{
+    /* Altivec detection on PowerPC is usually available through various methods
+     * depending on the OS. For now, we'll detect using a simple method.
+     * Note: On PowerPC, Altivec is often detected via OS-specific methods
+     * such as sysctl or HWCAP.
+     */
+#if defined(__APPLE__)
+    /* On macOS, use sysctl */
+    #include <sys/sysctl.h>
+    int has_altivec = 0;
+    size_t len = sizeof(has_altivec);
+    if (sysctlbyname("hw.optional.altivec", &has_altivec, &len, NULL, 0) == 0) {
+        ppc_cpu_enable_altivec = has_altivec;
+    }
+#elif defined(__linux__)
+    /* On Linux, use HWCAP */
+    #include <sys/auxv.h>
+    #include <asm/hwcap.h>
+    unsigned long hwcap = getauxval(AT_HWCAP);
+    #ifdef PPC_FEATURE_HAS_ALTIVEC
+        ppc_cpu_enable_altivec = !!(hwcap & PPC_FEATURE_HAS_ALTIVEC);
+    #else
+        /* Fallback - try to detect through other means if PPC_FEATURE_HAS_ALTIVEC is not available */
+        ppc_cpu_enable_altivec = 0;  /* Will be set by other detection methods if available */
+    #endif
+#else
+    /* For other systems or if detection fails, we can implement a more generic approach */
+    ppc_cpu_enable_altivec = 0;  /* Default to disabled unless detected */
 #endif
 }
 #endif // x86 & NO_SIMD

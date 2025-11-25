@@ -113,6 +113,13 @@ parser.add_argument('--dest-cpu',
     choices=valid_arch,
     help=f"CPU architecture to build for ({', '.join(valid_arch)})")
 
+parser.add_argument('--with-simd-support',
+    action='store',
+    dest='simd_support',
+    choices=['sse2', '3dnow', 'altivec', 'auto', 'none'],
+    default='auto',
+    help="SIMD instruction set support to enable (sse2, 3dnow, altivec, auto, none) [default: %(default)s]")
+
 parser.add_argument('--cross-compiling',
     action='store_true',
     dest='cross_compiling',
@@ -1584,6 +1591,35 @@ def configure_node(o):
   # Allow overriding the compiler - needed by embedders.
   if options.use_clang:
     o['variables']['clang'] = 1
+
+  # SIMD instruction set support configuration
+  simd_support = options.simd_support
+  if simd_support == 'auto':
+    # Auto-detect based on target architecture
+    if target_arch in ['x64', 'ia32']:
+      simd_support = 'sse2'  # Default to SSE2 for x86/x64 unless 3DNow! is preferred
+    elif target_arch in ['ppc64', 'ppc']:
+      simd_support = 'altivec'
+    else:
+      simd_support = 'none'  # Default to none for other architectures
+
+  # Set SIMD support variables
+  if simd_support == 'sse2':
+    o['variables']['node_enable_sse2'] = 'true'
+  elif simd_support == '3dnow':
+    o['variables']['node_enable_3dnow'] = 'true'
+  elif simd_support == 'altivec':
+    o['variables']['node_enable_altivec'] = 'true'
+  elif simd_support == 'none':
+    o['variables']['node_enable_sse2'] = 'false'
+    o['variables']['node_enable_3dnow'] = 'false'
+    o['variables']['node_enable_altivec'] = 'false'
+  else:
+    o['variables']['node_enable_sse2'] = 'false'
+    o['variables']['node_enable_3dnow'] = 'false'
+    o['variables']['node_enable_altivec'] = 'false'
+
+  o['variables']['node_simd_support'] = simd_support
 
   cross_compiling = (options.cross_compiling
                      if options.cross_compiling is not None
