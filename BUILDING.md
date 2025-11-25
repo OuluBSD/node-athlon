@@ -368,6 +368,32 @@ may reduce build time. For more information, see the
 The above requires that `python` resolves to a supported version of
 Python. See [Prerequisites](#prerequisites).
 
+#### Building for older x86 processors without SSE/SSE2 support
+
+For older AMD processors like the Athlon 800MHz that do not support SSE/SSE2 instructions, Node.js can be built with alternative SIMD instruction sets. The Athlon 800MHz supports 3DNow!, 3DNow! Extensions, MMX, and MMX Extensions but not SSE/SSE2.
+
+To build Node.js for such systems, use the `--with-simd-support` option:
+
+```bash
+./configure --with-simd-support=3dnow --dest-cpu=ia32
+make -j4
+```
+
+This configuration will:
+- Enable 3DNow! optimizations when available at runtime
+- Avoid requiring SSE/SSE2 instructions that older processors lack
+- Fall back to scalar implementations when SIMD is not available
+- Allow Node.js to run on processors without SSE/SSE2 support
+
+Alternatively, you can build with no SIMD optimizations:
+
+```bash
+./configure --with-simd-support=none --dest-cpu=ia32
+make -j4
+```
+
+The default setting (`--with-simd-support=auto`) will automatically detect available SIMD features at runtime.
+
 After building, setting up [firewall rules](tools/macos-firewall.sh) can avoid
 popups asking to accept incoming network connections when running tests.
 
