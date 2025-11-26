@@ -34,16 +34,20 @@ struct ConvertTo8BitHashReader {
 #elif defined(__3dNOW__)
     // 3DNow! implementation for AMD Athlon processors
     __m64 x = *reinterpret_cast<const __m64*>(p);
-    __m64 result = _mm_packs_pu16(x, x);  // Pack with 3DNow! instruction
-    uint64_t ret = *reinterpret_cast<uint32_t*>(&result);
+    __m64 result = _m_packs_pu16(x, x);  // Pack with 3DNow! instruction
+    uint64_t ret = *reinterpret_cast<uint64_t*>(&result);
     _m_empty();  // Clean up 3DNow! state
     return ret;
 #elif defined(__SSE2__)
-    __m128i x = _mm_loadu_si128(reinterpret_cast<const __m128i*>(p));
-    __m128i packed = _mm_packus_epi16(x, x);
+    // Load 16-bit values into 2 64-bit registers and pack them to 8-bit values
+    __m128i x_low = _mm_loadl_epi64(reinterpret_cast<const __m128i*>(p));      // Load first 4 16-bit values
+    __m128i x_high = _mm_loadl_epi64(reinterpret_cast<const __m128i*>(p + 4)); // Load last 4 16-bit values
+    __m128i packed = _mm_packus_epi16(x_low, x_high);
 #ifdef _M_IX86  // 32-bit x86 - _mm_cvtsi128_si64 might not be available
-    // Extract lower 64 bits using alternative method
-    return _mm_cvtsi128_si32(packed) | (static_cast<uint64_t>(_mm_cvtsi128_si32(_mm_srli_si128(packed, 4))) << 32);
+    // Extract 64-bit result using alternative method that works on 32-bit systems
+    uint32_t low = _mm_cvtsi128_si32(packed);
+    uint32_t high = _mm_cvtsi128_si32(_mm_shuffle_epi32(packed, _MM_SHUFFLE(1,1,1,1)));
+    return low | (static_cast<uint64_t>(high) << 32);
 #else
     return _mm_cvtsi128_si64(packed);
 #endif
@@ -69,31 +73,37 @@ struct ConvertTo8BitHashReader {
     // Altivec implementation for PowerPC systems (like G5)
     vector unsigned short x = vec_ld(0, p);
     vector unsigned char packed = vec_pack(x, x);
-    // Extract 64-bit result from the packed vector
+    // Extract 32-bit result from the packed vector (as low 64 bits for consistency)
     uint64_t result;
     vec_ste((vector unsigned long long)packed, 0, (unsigned long long*)&result);
     return result;
 #elif defined(__3dNOW__)
     // 3DNow! implementation for AMD Athlon processors
     __m64 x = *reinterpret_cast<const __m64*>(p);
-    __m64 result = _mm_packs_pu16(x, x);  // Pack with 3DNow! instruction
-    uint64_t ret = *reinterpret_cast<uint32_t*>(&result);
+    __m64 result = _m_packs_pu16(x, x);  // Pack with 3DNow! instruction
+    uint64_t ret = *reinterpret_cast<uint64_t*>(&result);
     _m_empty();  // Clean up 3DNow! state
     return ret;
 #elif defined(__SSE2__)
-    __m128i x = _mm_loadu_si64(reinterpret_cast<const __m128i*>(p));
+    // Load 16-bit values and pack them to 8-bit values
+    // Only pack first 4 16-bit values to get 4 8-bit values
+    __m128i x = _mm_setzero_si128();
+    x = _mm_insert_epi16(x, p[0], 0);
+    x = _mm_insert_epi16(x, p[1], 1);
+    x = _mm_insert_epi16(x, p[2], 2);
+    x = _mm_insert_epi16(x, p[3], 3);
     __m128i packed = _mm_packus_epi16(x, x);
-#ifdef _M_IX86  // 32-bit x86 - _mm_cvtsi128_si64 might not be available
-    // Extract lower 64 bits using alternative method
-    return _mm_cvtsi128_si32(packed) | (static_cast<uint64_t>(_mm_cvtsi128_si32(_mm_srli_si128(packed, 4))) << 32);
+#ifdef _M_IX86  // 32-bit x86 - use alternative method
+    // Use _mm_cvtsi128_si32 to get the lower 32 bits and cast to uint64_t
+    return static_cast<uint64_t>(_mm_cvtsi128_si32(packed));
 #else
-    return _mm_cvtsi128_si64(packed);
+    return static_cast<uint64_t>(_mm_cvtsi128_si32(packed));
 #endif
 #elif defined(__ARM_NEON__)
     uint16x4_t x;
     memcpy(&x, p, sizeof(x));
     uint16x8_t x_wide = vcombine_u16(x, x);
-    return vget_lane_u32(vreinterpret_u32_u8(vmovn_u16(x_wide)), 0);
+    return static_cast<uint64_t>(vget_lane_u32(vreinterpret_u32_u8(vmovn_u16(x_wide)), 0));
 #else
     return (uint64_t{p[0]}) | (uint64_t{p[1]} << 8) | (uint64_t{p[2]} << 16) |
            (uint64_t{p[3]} << 24);

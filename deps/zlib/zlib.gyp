@@ -142,13 +142,13 @@
           'target_name': 'zlib_data_chunk_simd',
           'type': 'static_library',
           'conditions': [
-            ['target_arch in "ia32 x64" and OS!="ios"', {
+            ['target_arch == "ia32" and OS!="ios"', {
+              # For 32-bit x86, we use a different approach since advanced SIMD may not be available
               'defines': [ 'INFLATE_CHUNK_SIMD_SSE2' ],
-              'conditions': [
-                ['target_arch=="x64"', {
-                  'defines': [ 'INFLATE_CHUNK_READ_64LE' ],
-                }],
-              ],
+            }],
+            ['target_arch == "x64" and OS!="ios"', {
+              'defines': [ 'INFLATE_CHUNK_SIMD_SSE2' ],
+              'defines': [ 'INFLATE_CHUNK_READ_64LE' ],
             }],
             ['arm_fpu=="neon"', {
               'defines': [ 'INFLATE_CHUNK_SIMD_NEON' ],
@@ -162,7 +162,11 @@
           'include_dirs': [ '<(ZLIB_ROOT)' ],
           'direct_dependent_settings': {
             'conditions': [
-              ['target_arch in "ia32 x64" and OS!="ios"', {
+              ['target_arch == "x64" and OS!="ios"', {
+                'defines': [ 'INFLATE_CHUNK_SIMD_SSE2' ],
+              }],
+              # For 32-bit x86, only apply simpler SIMD features
+              ['target_arch == "ia32" and OS!="ios"', {
                 'defines': [ 'INFLATE_CHUNK_SIMD_SSE2' ],
               }],
               ['arm_fpu=="neon"', {
@@ -173,6 +177,30 @@
           },
           'sources': [
             '<!@pymod_do_main(GN-scraper "<(ZLIB_ROOT)/BUILD.gn" "\\"zlib_data_chunk_simd\\".*?sources = ")',
+          ],
+          'conditions': [
+            # For 32-bit x86 builds, use more conservative SIMD flags
+            ['target_arch == "ia32" and OS!="ios"', {
+              'defines': [ 'INFLATE_CHUNK_SIMD_SSE2' ],  # Define SSE2 support for 32-bit x86
+              'conditions': [
+                ['OS!="win" or clang==1', {
+                  'cflags': [ '-msse2', '-mfpmath=sse' ],
+                  'xcode_settings': {
+                    'OTHER_CFLAGS': [ '-msse2', '-mfpmath=sse' ],
+                  },
+                }],
+              ],
+            }],
+            ['target_arch == "x64" and OS!="ios"', {
+              'conditions': [
+                ['OS!="win" or clang==1', {
+                  'cflags': [ '-msse4.2' ],
+                  'xcode_settings': {
+                    'OTHER_CFLAGS': [ '-msse4.2' ],
+                  },
+                }],
+              ],
+            }],
           ],
         }, # zlib_data_chunk_simd
         {
@@ -193,6 +221,16 @@
             }, {
               'defines': [ 'ZLIB_DLL' ]
             }],
+            ['target_arch in "ia32 x64" and OS!="ios"', {
+              'conditions': [
+                ['OS!="win" or clang==1', {
+                  'cflags': [ '-mssse3', '-msse2', '-msse4.2', '-mpclmul' ],
+                  'xcode_settings': {
+                    'OTHER_CFLAGS': [ '-mssse3', '-msse2', '-msse4.2', '-mpclmul' ],
+                  },
+                }],
+              ],
+            }],
             ['OS=="mac" or OS=="ios" or OS=="freebsd" or OS=="android"', {
               # Mac, Android and the BSDs don't have fopen64, ftello64, or
               # fseeko64. We use fopen, ftell, and fseek instead on these
@@ -204,7 +242,32 @@
             # Incorporate optimizations where possible.
             ['(target_arch in "ia32 x64" and OS!="ios") or arm_fpu=="neon"', {
               'dependencies': [ 'zlib_data_chunk_simd' ],
-              'sources': [ '<(ZLIB_ROOT)/slide_hash_simd.h' ]
+              'sources': [ '<(ZLIB_ROOT)/slide_hash_simd.h' ],
+              'conditions': [
+                ['target_arch == "x64" and OS!="ios"', {
+                  'defines': [ 'INFLATE_CHUNK_SIMD_SSE2' ],  # Define SSE2 support for x64
+                  'conditions': [
+                    ['OS!="win" or clang==1', {
+                      'cflags': [ '-msse4.2', '-msse2' ],
+                      'xcode_settings': {
+                        'OTHER_CFLAGS': [ '-msse4.2', '-msse2' ],
+                      },
+                    }],
+                  ],
+                }],
+                # For 32-bit x86 builds, use more conservative SIMD flags
+                ['target_arch == "ia32" and OS!="ios"', {
+                  'defines': [ 'INFLATE_CHUNK_SIMD_SSE2' ],  # Define SSE2 support for 32-bit x86
+                  'conditions': [
+                    ['OS!="win" or clang==1', {
+                      'cflags': [ '-msse2', '-mfpmath=sse' ],
+                      'xcode_settings': {
+                        'OTHER_CFLAGS': [ '-msse2', '-mfpmath=sse' ],
+                      },
+                    }],
+                  ],
+                }],
+              ],
             }, {
               'defines': [ 'CPU_NO_SIMD' ],
               'sources': [ '<(ZLIB_ROOT)/inflate.c' ],

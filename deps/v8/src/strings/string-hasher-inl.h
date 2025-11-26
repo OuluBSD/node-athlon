@@ -13,6 +13,10 @@
 
 #ifdef __SSE2__
 #include <emmintrin.h>
+#elif defined(__3dNOW__)
+#include <mm3dnow.h>  // for 3DNow! instructions
+#elif defined(__ALTIVEC__)
+#include <altivec.h>  // for AltiVec instructions
 #elif defined(__ARM_NEON__)
 #include <arm_neon.h>
 #endif
