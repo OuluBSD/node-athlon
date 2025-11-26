@@ -64,6 +64,17 @@
 #include <tmmintrin.h>
 #endif
 
+#ifdef __ALTIVEC__
+#include <altivec.h>
+#undef vector
+#undef pixel
+#undef bool
+#endif
+
+#ifdef __3dNOW__
+#include <mm3dnow.h>
+#endif
+
 namespace v8 {
 namespace internal {
 namespace swiss_table {
@@ -218,7 +229,69 @@ inline static swiss_table::ctrl_t H2(uint32_t hash) {
   return hash & ((1 << kH2Bits) - 1);
 }
 
-#if V8_SWISS_TABLE_HAVE_SSE2_HOST
+#if defined(__ALTIVEC__)
+struct GroupAltivecImpl {
+  static constexpr size_t kWidth = 16;  // the number of slots per group
+
+  explicit GroupAltivecImpl(const ctrl_t* pos) {
+    ctrl = vec_ld(0, pos);
+  }
+
+  // Returns a bitmask representing the positions of slots that match |hash|.
+  BitMask<uint32_t, kWidth> Match(h2_t hash) const {
+    vector signed char match_vec = vec_splats((signed char)hash);
+    vector unsigned char ctrl_vec = (vector unsigned char)ctrl;
+    vector unsigned char match_result = (vector unsigned char)vec_cmpeq(match_vec, ctrl_vec);
+    // Convert the result to a bitmask
+    unsigned int mask = 0;
+    // Extract each byte and create the mask
+    for (int i = 0; i < 16; i++) {
+      unsigned char byte_val;
+      vec_ste((vector signed char)match_result, i, (signed char*)&byte_val);
+      if (byte_val != 0) {
+        mask |= (1u << i);
+      }
+    }
+    return BitMask<uint32_t, kWidth>(mask);
+  }
+
+  // Returns a bitmask representing the positions of empty slots.
+  BitMask<uint32_t, kWidth> MatchEmpty() const {
+    return Match(static_cast<h2_t>(kEmpty));
+  }
+
+  vector signed char ctrl;
+};
+#elif defined(__3dNOW__)
+struct Group3dNowImpl {
+  static constexpr size_t kWidth = 16;  // the number of slots per group
+
+  explicit Group3dNowImpl(const ctrl_t* pos) {
+    ctrl = *reinterpret_cast<const __m64*>(pos);
+  }
+
+  // Returns a bitmask representing the positions of slots that match |hash|.
+  BitMask<uint32_t, kWidth> Match(h2_t hash) const {
+    // This is a simplified implementation for 3DNow!
+    // In reality, 3DNow! doesn't work well for this use case, so we'll use a hybrid approach
+    uint32_t mask = 0;
+    for (size_t i = 0; i < kWidth; i++) {
+      if (((const ctrl_t*)&ctrl)[i] == hash) {
+        mask |= 1u << i;
+      }
+    }
+    _m_empty();  // Clean up 3DNow! state
+    return BitMask<uint32_t, kWidth>(mask);
+  }
+
+  // Returns a bitmask representing the positions of empty slots.
+  BitMask<uint32_t, kWidth> MatchEmpty() const {
+    return Match(static_cast<h2_t>(kEmpty));
+  }
+
+  __m64 ctrl;
+};
+#elif V8_SWISS_TABLE_HAVE_SSE2_HOST
 struct GroupSse2Impl {
   static constexpr size_t kWidth = 16;  // the number of slots per group
 
@@ -339,6 +412,12 @@ struct GroupPortableImpl {
 // backend should only use SSE2 when compiling the SIMD version of
 // SwissNameDictionary into the builtin.
 using Group = GroupPortableImpl;
+#elif defined(__ALTIVEC__)
+// Use Altivec implementation for PowerPC systems (like G5)
+using Group = GroupAltivecImpl;
+#elif defined(__3dNOW__)
+// Use 3DNow! implementation for AMD Athlon processors
+using Group = Group3dNowImpl;
 #elif V8_SWISS_TABLE_HAVE_SSE2_TARGET
 // Use a matching group size between host and target.
 #if V8_SWISS_TABLE_HAVE_SSE2_HOST

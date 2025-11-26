@@ -49,7 +49,193 @@
 /* NMAX is the largest n such that 255n(n+1)/2 + (n+1)(BASE-1) <= 2^32-1 */
 #define NMAX 5552
 
-#if defined(ADLER32_SIMD_SSSE3)
+#if defined(__ALTIVEC__) && defined(ADLER32_SIMD_ALTIVEC)
+
+#include <altivec.h>
+#undef vector
+#undef pixel
+#undef bool
+
+uint32_t ZLIB_INTERNAL adler32_simd_(  /* Altivec */
+    uint32_t adler,
+    const unsigned char *buf,
+    z_size_t len)
+{
+    /*
+     * Split Adler-32 into component sums.
+     */
+    uint32_t s1 = adler & 0xffff;
+    uint32_t s2 = adler >> 16;
+
+    /*
+     * Process the data in blocks.
+     */
+    const unsigned BLOCK_SIZE = 1 << 5;  /* 32 bytes */
+
+    z_size_t blocks = len / BLOCK_SIZE;
+    len -= blocks * BLOCK_SIZE;
+
+    while (blocks)
+    {
+        unsigned n = NMAX / BLOCK_SIZE;  /* The NMAX constraint. */
+        if (n > blocks)
+            n = (unsigned) blocks;
+        blocks -= n;
+
+        /*
+         * Process n blocks of data. At most NMAX data bytes can be
+         * processed before s2 must be reduced modulo BASE.
+         */
+        vector unsigned int v_ps = {0, 0, 0, s1 * n};
+        vector unsigned int v_s2 = {0, 0, 0, s2};
+        vector unsigned int v_s1 = {0, 0, 0, 0};
+
+        do {
+            /*
+             * Load 32 input bytes.
+             */
+            vector unsigned char bytes1 = vec_ld(0, (unsigned char *)(buf));
+            vector unsigned char bytes2 = vec_ld(16, (unsigned char *)(buf));
+
+            /*
+             * Add previous block byte sum to v_ps.
+             */
+            v_ps = vec_add(v_ps, v_s1);
+
+            /*
+             * Horizontally add the bytes for s1 using Altivec operations
+             */
+            vector unsigned char zero = {0};
+            vector unsigned short sums = vec_sum4s(bytes1, zero);
+            sums = vec_sum4s(bytes2, sums);
+            v_s1 = vec_add(v_s1, (vector unsigned int)sums);
+
+            buf += BLOCK_SIZE;
+
+        } while (--n);
+
+        v_s2 = vec_add(v_s2, vec_sl(v_ps, (vector unsigned int){5, 5, 5, 5}));
+
+        /*
+         * Sum epi32 ints v_s1(s2) and accumulate in s1(s2).
+         */
+        vector unsigned int s1_sum = vec_sums(v_s1, (vector unsigned int){0});
+        s1 += vec_extract(s1_sum, 3);
+
+        vector unsigned int s2_sum = vec_sums(v_s2, (vector unsigned int){0});
+        s2 = vec_extract(s2_sum, 3);
+
+        /*
+         * Reduce.
+         */
+        s1 %= BASE;
+        s2 %= BASE;
+    }
+
+    /*
+     * Handle leftover data.
+     */
+    if (len) {
+        while (len--) {
+            s2 += (s1 += *buf++);
+        }
+
+        if (s1 >= BASE)
+            s1 -= BASE;
+        s2 %= BASE;
+    }
+
+    /*
+     * Return the recombined sums.
+     */
+    return s1 | (s2 << 16);
+}
+
+#elif defined(__3dNOW__) && defined(ADLER32_SIMD_3DNOW)
+
+#include <mm3dnow.h>
+
+uint32_t ZLIB_INTERNAL adler32_simd_(  /* 3DNow! */
+    uint32_t adler,
+    const unsigned char *buf,
+    z_size_t len)
+{
+    /*
+     * Split Adler-32 into component sums.
+     */
+    uint32_t s1 = adler & 0xffff;
+    uint32_t s2 = adler >> 16;
+
+    /*
+     * Process the data in blocks of 32 bytes.
+     */
+    const unsigned BLOCK_SIZE = 32;
+    z_size_t blocks = len / BLOCK_SIZE;
+    len -= blocks * BLOCK_SIZE;
+
+    while (blocks)
+    {
+        unsigned n = NMAX / BLOCK_SIZE;  /* The NMAX constraint. */
+        if (n > blocks)
+            n = (unsigned) blocks;
+        blocks -= n;
+
+        /*
+         * Process n blocks of data. At most NMAX data bytes can be
+         * processed before s2 must be reduced modulo BASE.
+         */
+        uint32_t local_s1 = 0;
+        uint32_t local_s2 = s2 + s1 * n;  /* Account for cumulative sum */
+
+        do {
+            /*
+             * For 3DNow!, we'll process in a more basic SIMD way with __m64
+             */
+            __m64 *data_ptr = (__m64 *)buf;
+            
+            for (int i = 0; i < 4; i++) {  /* 32 bytes = 4 m64 values */
+                __m64 data = data_ptr[i];
+                unsigned char *bytes = (unsigned char *)&data;
+                
+                for (int j = 0; j < 8; j++) {
+                    local_s1 += bytes[j];
+                    local_s2 += local_s1;
+                }
+            }
+            
+            buf += BLOCK_SIZE;
+
+        } while (--n);
+
+        s1 += local_s1;
+        s2 += local_s2;
+
+        s1 %= BASE;
+        s2 %= BASE;
+        
+        _m_empty();  /* Clean up 3DNow! state */
+    }
+
+    /*
+     * Handle leftover data.
+     */
+    if (len) {
+        while (len--) {
+            s2 += (s1 += *buf++);
+        }
+
+        if (s1 >= BASE)
+            s1 -= BASE;
+        s2 %= BASE;
+    }
+
+    /*
+     * Return the recombined sums.
+     */
+    return s1 | (s2 << 16);
+}
+
+#elif defined(ADLER32_SIMD_SSSE3)
 
 #include <tmmintrin.h>
 

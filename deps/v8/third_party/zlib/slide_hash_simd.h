@@ -22,6 +22,49 @@
 
 #error SIMD has been disabled for your build target
 
+#elif defined(__ALTIVEC__) && defined(DEFLATE_SLIDE_HASH_ALTIVEC)
+
+#include <altivec.h>  /* Altivec */
+#undef vector
+#undef pixel
+#undef bool
+
+#define Z_SLIDE_INIT_SIMD(wsize) (vector unsigned short){(ush)(wsize), (ush)(wsize), (ush)(wsize), (ush)(wsize), (ush)(wsize), (ush)(wsize), (ush)(wsize), (ush)(wsize)}
+
+#define Z_SLIDE_HASH_SIMD(table, size, vector_wsize) \
+    for (const Posf* const end = table + size; table != end;) { \
+        vector unsigned short vO = vec_ld(0, (unsigned short*)(table + 0)); \
+        vO = vec_subs(vO, vector_wsize); \
+        vec_st(vO, 0, (unsigned short*)(table + 0)); \
+        table += 8; \
+    }
+
+typedef vector unsigned short z_vec128i_u16x8_t;
+
+#elif defined(__3dNOW__) && defined(DEFLATE_SLIDE_HASH_3DNOW)
+
+#include <mm3dnow.h>  /* 3DNow! */
+
+#define Z_SLIDE_INIT_SIMD(wsize) (*(__m64*)&((ush[4]){(ush)(wsize), (ush)(wsize), (ush)(wsize), (ush)(wsize)}))
+
+#define Z_SLIDE_HASH_SIMD(table, size, vector_wsize) \
+    for (const Posf* const end = table + size; table != end;) { \
+        __m64 vO = *(__m64*)(table + 0); \
+        /* 3DNow! doesn't have good unsigned short operations, so use simple loop */ \
+        for (int i = 0; i < 4; i++) { \
+            if (((ush*)&vO)[i] >= (ush)&vector_wsize) { \
+                ((ush*)&vO)[i] -= (ush)&vector_wsize; \
+            } else { \
+                ((ush*)&vO)[i] = 0; \
+            } \
+        } \
+        *(__m64*)(table + 0) = vO; \
+        table += 4; \
+        _m_empty();  /* Clean up 3DNow! state */ \
+    }
+
+typedef __m64 z_vec128i_u16x8_t;
+
 #elif defined(DEFLATE_SLIDE_HASH_SSE2)
 
 #include <emmintrin.h>  /* SSE2 */

@@ -177,7 +177,30 @@ inline uint64_t V128_Extract64(const V128 l) {
   return static_cast<uint64_t>(_mm_extract_epi64(l, imm));
 }
 
-inline int64_t V128_Low64(const V128 l) { return _mm_cvtsi128_si64(l); }
+inline int64_t V128_Low64(const V128 l) {
+#if defined(__ALTIVEC__)
+  // Altivec implementation for PowerPC systems (like G5)
+  int64_t result;
+  vec_ste((vector signed long long)l, 0, (long long*)&result);
+  return result;
+#elif defined(__3dNOW__)
+  // 3DNow! implementation for AMD Athlon processors
+  // Use the lower 64 bits directly
+  int64_t result = *reinterpret_cast<const int64_t*>(&l);
+  _m_empty();  // Clean up 3DNow! state
+  return result;
+#elif defined(__SSE2__)
+#ifdef _M_IX86  // 32-bit x86 - _mm_cvtsi128_si64 might not be available
+  // Extract lower 64 bits using alternative method
+  return _mm_cvtsi128_si32(l) | (static_cast<int64_t>(_mm_cvtsi128_si32(_mm_srli_si128(l, 4))) << 32);
+#else
+  return _mm_cvtsi128_si64(l);
+#endif
+#else
+  // Fallback - should not reach here since this function is in SIMD-specific code
+  return *reinterpret_cast<const int64_t*>(&l);
+#endif
+}
 
 inline V128 V128_Add64(const V128 l, const V128 r) {
   return _mm_add_epi64(l, r);

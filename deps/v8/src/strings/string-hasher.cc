@@ -23,9 +23,30 @@ struct ConvertTo8BitHashReader {
     DCHECK_LE(p[5], 0xff);
     DCHECK_LE(p[6], 0xff);
     DCHECK_LE(p[7], 0xff);
-#ifdef __SSE2__
+#ifdef __ALTIVEC__
+    // Altivec implementation for PowerPC systems (like G5)
+    vector unsigned short x = vec_ld(0, p);
+    vector unsigned char packed = vec_pack(x, x);
+    // Extract 64-bit result from the packed vector
+    uint64_t result;
+    vec_ste((vector unsigned long long)packed, 0, (unsigned long long*)&result);
+    return result;
+#elif defined(__3dNOW__)
+    // 3DNow! implementation for AMD Athlon processors
+    __m64 x = *reinterpret_cast<const __m64*>(p);
+    __m64 result = _mm_packs_pu16(x, x);  // Pack with 3DNow! instruction
+    uint64_t ret = *reinterpret_cast<uint32_t*>(&result);
+    _m_empty();  // Clean up 3DNow! state
+    return ret;
+#elif defined(__SSE2__)
     __m128i x = _mm_loadu_si128(reinterpret_cast<const __m128i*>(p));
-    return _mm_cvtsi128_si64(_mm_packus_epi16(x, x));
+    __m128i packed = _mm_packus_epi16(x, x);
+#ifdef _M_IX86  // 32-bit x86 - _mm_cvtsi128_si64 might not be available
+    // Extract lower 64 bits using alternative method
+    return _mm_cvtsi128_si32(packed) | (static_cast<uint64_t>(_mm_cvtsi128_si32(_mm_srli_si128(packed, 4))) << 32);
+#else
+    return _mm_cvtsi128_si64(packed);
+#endif
 #elif defined(__ARM_NEON__)
     uint16x8_t x;
     memcpy(&x, p, sizeof(x));
@@ -44,9 +65,30 @@ struct ConvertTo8BitHashReader {
     DCHECK_LE(p[1], 0xff);
     DCHECK_LE(p[2], 0xff);
     DCHECK_LE(p[3], 0xff);
-#ifdef __SSE2__
+#ifdef __ALTIVEC__
+    // Altivec implementation for PowerPC systems (like G5)
+    vector unsigned short x = vec_ld(0, p);
+    vector unsigned char packed = vec_pack(x, x);
+    // Extract 64-bit result from the packed vector
+    uint64_t result;
+    vec_ste((vector unsigned long long)packed, 0, (unsigned long long*)&result);
+    return result;
+#elif defined(__3dNOW__)
+    // 3DNow! implementation for AMD Athlon processors
+    __m64 x = *reinterpret_cast<const __m64*>(p);
+    __m64 result = _mm_packs_pu16(x, x);  // Pack with 3DNow! instruction
+    uint64_t ret = *reinterpret_cast<uint32_t*>(&result);
+    _m_empty();  // Clean up 3DNow! state
+    return ret;
+#elif defined(__SSE2__)
     __m128i x = _mm_loadu_si64(reinterpret_cast<const __m128i*>(p));
-    return _mm_cvtsi128_si64(_mm_packus_epi16(x, x));
+    __m128i packed = _mm_packus_epi16(x, x);
+#ifdef _M_IX86  // 32-bit x86 - _mm_cvtsi128_si64 might not be available
+    // Extract lower 64 bits using alternative method
+    return _mm_cvtsi128_si32(packed) | (static_cast<uint64_t>(_mm_cvtsi128_si32(_mm_srli_si128(packed, 4))) << 32);
+#else
+    return _mm_cvtsi128_si64(packed);
+#endif
 #elif defined(__ARM_NEON__)
     uint16x4_t x;
     memcpy(&x, p, sizeof(x));

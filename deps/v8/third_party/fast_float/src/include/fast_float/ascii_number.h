@@ -67,14 +67,40 @@ read8_to_u64(const UC *chars) {
 
 fastfloat_really_inline uint64_t simd_read8_to_u64(const __m128i data) {
   FASTFLOAT_SIMD_DISABLE_WARNINGS
+#ifdef __ALTIVEC__
+  // Altivec implementation for PowerPC systems (like G5)
+  vector unsigned short v_data = (vector unsigned short)data;
+  vector unsigned char packed = vec_pack(v_data, v_data);
+  uint64_t result;
+  vec_ste((vector unsigned long long)packed, 0, (unsigned long long*)&result);
+  return result;
+#elif defined(__3dNOW__)
+  // 3DNow! implementation for AMD Athlon processors
+  __m64 low = *(__m64*)&data;  // Get lower 64 bits
+  __m64 result = _mm_packs_pu16(low, low);  // Pack with 3DNow! instruction
+  uint64_t ret = *reinterpret_cast<uint32_t*>(&result);
+  _m_empty();  // Clean up 3DNow! state
+  return ret;
+#elif defined(__SSE2__)
   const __m128i packed = _mm_packus_epi16(data, data);
 #ifdef FASTFLOAT_64BIT
+#ifdef _M_IX86  // 32-bit x86 - _mm_cvtsi128_si64 might not be available
+  // Extract lower 64 bits using alternative method
+  return _mm_cvtsi128_si32(packed) | (static_cast<uint64_t>(_mm_cvtsi128_si32(_mm_srli_si128(packed, 4))) << 32);
+#else
   return uint64_t(_mm_cvtsi128_si64(packed));
+#endif
 #else
   uint64_t value;
   // Visual Studio + older versions of GCC don't support _mm_storeu_si64
   _mm_storel_epi64(reinterpret_cast<__m128i *>(&value), packed);
   return value;
+#endif
+#else
+  // Fallback: process without SIMD
+  const uint16_t* ptr = (const uint16_t*)&data;
+  return (uint64_t{ptr[0]}) | (uint64_t{ptr[1]} << 16) | 
+         (uint64_t{ptr[2]} << 32) | (uint64_t{ptr[3]} << 48);
 #endif
   FASTFLOAT_SIMD_RESTORE_WARNINGS
 }

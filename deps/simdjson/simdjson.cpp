@@ -15601,7 +15601,23 @@ simdjson_inline uint64_t prefix_xor(const uint64_t bitmask) {
   // but not clmul.
   __m128i all_ones = _mm_set1_epi8('\xFF');
   __m128i result = _mm_clmulepi64_si128(_mm_set_epi64x(0ULL, bitmask), all_ones, 0);
+#ifdef __ALTIVEC__
+  // Altivec implementation for PowerPC systems (like G5)
+  vector unsigned char result_vec = (vector unsigned char)result;
+  uint64_t extracted;
+  vec_ste((vector unsigned long long)result_vec, 0, (unsigned long long*)&extracted);
+  return extracted;
+#elif defined(__3dNOW__)
+  // 3DNow! implementation for AMD Athlon processors
+  uint64_t result_64 = *reinterpret_cast<const uint64_t*>(&result);
+  _m_empty();  // Clean up 3DNow! state
+  return result_64;
+#elif defined(_M_IX86)  // 32-bit x86 - _mm_cvtsi128_si64 might not be available
+  // Extract lower 64 bits using alternative method
+  return _mm_cvtsi128_si32(result) | (static_cast<uint64_t>(_mm_cvtsi128_si32(_mm_srli_si128(result, 4))) << 32);
+#else
   return _mm_cvtsi128_si64(result);
+#endif
 }
 
 } // unnamed namespace
@@ -18336,7 +18352,23 @@ simdjson_inline uint64_t prefix_xor(const uint64_t bitmask) {
   // but not clmul.
   __m128i all_ones = _mm_set1_epi8('\xFF');
   __m128i result = _mm_clmulepi64_si128(_mm_set_epi64x(0ULL, bitmask), all_ones, 0);
+#ifdef __ALTIVEC__
+  // Altivec implementation for PowerPC systems (like G5)
+  vector unsigned char result_vec = (vector unsigned char)result;
+  uint64_t extracted;
+  vec_ste((vector unsigned long long)result_vec, 0, (unsigned long long*)&extracted);
+  return extracted;
+#elif defined(__3dNOW__)
+  // 3DNow! implementation for AMD Athlon processors
+  uint64_t result_64 = *reinterpret_cast<const uint64_t*>(&result);
+  _m_empty();  // Clean up 3DNow! state
+  return result_64;
+#elif defined(_M_IX86)  // 32-bit x86 - _mm_cvtsi128_si64 might not be available
+  // Extract lower 64 bits using alternative method
+  return _mm_cvtsi128_si32(result) | (static_cast<uint64_t>(_mm_cvtsi128_si32(_mm_srli_si128(result, 4))) << 32);
+#else
   return _mm_cvtsi128_si64(result);
+#endif
 }
 
 } // unnamed namespace
@@ -21951,7 +21983,23 @@ simdjson_inline uint64_t prefix_xor(const uint64_t bitmask) {
   // but not clmul.
   __m128i all_ones = _mm_set1_epi8('\xFF');
   __m128i result = _mm_clmulepi64_si128(_mm_set_epi64x(0ULL, bitmask), all_ones, 0);
+#ifdef __ALTIVEC__
+  // Altivec implementation for PowerPC systems (like G5)
+  vector unsigned char result_vec = (vector unsigned char)result;
+  uint64_t extracted;
+  vec_ste((vector unsigned long long)result_vec, 0, (unsigned long long*)&extracted);
+  return extracted;
+#elif defined(__3dNOW__)
+  // 3DNow! implementation for AMD Athlon processors
+  uint64_t result_64 = *reinterpret_cast<const uint64_t*>(&result);
+  _m_empty();  // Clean up 3DNow! state
+  return result_64;
+#elif defined(_M_IX86)  // 32-bit x86 - _mm_cvtsi128_si64 might not be available
+  // Extract lower 64 bits using alternative method
+  return _mm_cvtsi128_si32(result) | (static_cast<uint64_t>(_mm_cvtsi128_si32(_mm_srli_si128(result, 4))) << 32);
+#else
   return _mm_cvtsi128_si64(result);
+#endif
 }
 
 } // unnamed namespace
@@ -24685,7 +24733,23 @@ simdjson_inline uint64_t prefix_xor(const uint64_t bitmask) {
   // but not clmul.
   __m128i all_ones = _mm_set1_epi8('\xFF');
   __m128i result = _mm_clmulepi64_si128(_mm_set_epi64x(0ULL, bitmask), all_ones, 0);
+#ifdef __ALTIVEC__
+  // Altivec implementation for PowerPC systems (like G5)
+  vector unsigned char result_vec = (vector unsigned char)result;
+  uint64_t extracted;
+  vec_ste((vector unsigned long long)result_vec, 0, (unsigned long long*)&extracted);
+  return extracted;
+#elif defined(__3dNOW__)
+  // 3DNow! implementation for AMD Athlon processors
+  uint64_t result_64 = *reinterpret_cast<const uint64_t*>(&result);
+  _m_empty();  // Clean up 3DNow! state
+  return result_64;
+#elif defined(_M_IX86)  // 32-bit x86 - _mm_cvtsi128_si64 might not be available
+  // Extract lower 64 bits using alternative method
+  return _mm_cvtsi128_si32(result) | (static_cast<uint64_t>(_mm_cvtsi128_si32(_mm_srli_si128(result, 4))) << 32);
+#else
   return _mm_cvtsi128_si64(result);
+#endif
 }
 
 } // unnamed namespace
@@ -34885,7 +34949,23 @@ simdjson_inline uint64_t prefix_xor(const uint64_t bitmask) {
   // but not clmul.
   __m128i all_ones = _mm_set1_epi8('\xFF');
   __m128i result = _mm_clmulepi64_si128(_mm_set_epi64x(0ULL, bitmask), all_ones, 0);
+#ifdef __ALTIVEC__
+  // Altivec implementation for PowerPC systems (like G5)
+  vector unsigned char result_vec = (vector unsigned char)result;
+  uint64_t extracted;
+  vec_ste((vector unsigned long long)result_vec, 0, (unsigned long long*)&extracted);
+  return extracted;
+#elif defined(__3dNOW__)
+  // 3DNow! implementation for AMD Athlon processors
+  uint64_t result_64 = *reinterpret_cast<const uint64_t*>(&result);
+  _m_empty();  // Clean up 3DNow! state
+  return result_64;
+#elif defined(_M_IX86)  // 32-bit x86 - _mm_cvtsi128_si64 might not be available
+  // Extract lower 64 bits using alternative method
+  return _mm_cvtsi128_si32(result) | (static_cast<uint64_t>(_mm_cvtsi128_si32(_mm_srli_si128(result, 4))) << 32);
+#else
   return _mm_cvtsi128_si64(result);
+#endif
 }
 
 } // unnamed namespace
@@ -38046,7 +38126,23 @@ simdjson_inline uint64_t prefix_xor(const uint64_t bitmask) {
   // but not clmul.
   __m128i all_ones = _mm_set1_epi8('\xFF');
   __m128i result = _mm_clmulepi64_si128(_mm_set_epi64x(0ULL, bitmask), all_ones, 0);
+#ifdef __ALTIVEC__
+  // Altivec implementation for PowerPC systems (like G5)
+  vector unsigned char result_vec = (vector unsigned char)result;
+  uint64_t extracted;
+  vec_ste((vector unsigned long long)result_vec, 0, (unsigned long long*)&extracted);
+  return extracted;
+#elif defined(__3dNOW__)
+  // 3DNow! implementation for AMD Athlon processors
+  uint64_t result_64 = *reinterpret_cast<const uint64_t*>(&result);
+  _m_empty();  // Clean up 3DNow! state
+  return result_64;
+#elif defined(_M_IX86)  // 32-bit x86 - _mm_cvtsi128_si64 might not be available
+  // Extract lower 64 bits using alternative method
+  return _mm_cvtsi128_si32(result) | (static_cast<uint64_t>(_mm_cvtsi128_si32(_mm_srli_si128(result, 4))) << 32);
+#else
   return _mm_cvtsi128_si64(result);
+#endif
 }
 
 } // unnamed namespace
