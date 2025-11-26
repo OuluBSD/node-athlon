@@ -47,9 +47,9 @@ else
 fi
 
 # Set environment variables to use 32-bit compilation with 3DNow support
-export CC="gcc -m32 -march=pentium -mno-sse -mno-sse2 -m3dnow"
-export CXX="g++ -m32 -march=pentium -mno-sse -mno-sse2 -m3dnow"
-export CPP="cpp -m32 -march=pentium -mno-sse -mno-sse2 -m3dnow"
+export CC="gcc -m32 -march=athlon -mno-sse -mno-sse2 -m3dnow -m3dnowa"
+export CXX="g++ -m32 -march=athlon -mno-sse -mno-sse2 -m3dnow -m3dnowa"
+export CPP="cpp -m32 -march=athlon -mno-sse -mno-sse2 -m3dnow -m3dnowa"
 
 echo "Configuring build with 3DNow support..."
 /usr/bin/env python3 ./configure \
