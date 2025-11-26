@@ -1,0 +1,74 @@
+#!/bin/bash
+
+# Script to build Node.js for x86 systems with 3DNow support (for AMD Athlon)
+# This uses 32-bit compilation flags and 3DNow-compatible instructions
+
+set -e  # Exit on error
+
+echo "Setting up Node.js build for 32-bit x86 with 3DNow support..."
+
+# Parse command line arguments
+CLEAN=false
+SHOW_HELP=false
+
+for arg in "$@"; do
+  case $arg in
+    --clean)
+      CLEAN=true
+      ;;
+    --help|-h)
+      SHOW_HELP=true
+      ;;
+    *)
+      # Ignore unknown arguments for now
+      ;;
+  esac
+done
+
+if [ "$SHOW_HELP" = true ]; then
+  echo "Usage: $0 [OPTIONS]"
+  echo "Options:"
+  echo "  --clean    Clean previous build before starting"
+  echo "  --help, -h Show this help message"
+  echo ""
+  echo "Builds Node.js with 3DNow support for AMD Athlon processors."
+  exit 0
+fi
+
+# Ensure we're in the correct directory
+cd "$(dirname "$0")"
+
+# Clean any previous build only if --clean flag is provided
+if [ "$CLEAN" = true ]; then
+  echo "Cleaning previous build..."
+  make clean || true
+else
+  echo "Skipping clean step (use --clean flag to clean previous build)"
+fi
+
+# Set environment variables to use 32-bit compilation with 3DNow support
+export CC="gcc -m32 -march=pentium -mno-sse -mno-sse2 -m3dnow"
+export CXX="g++ -m32 -march=pentium -mno-sse -mno-sse2 -m3dnow"
+export CPP="cpp -m32 -march=pentium -mno-sse -mno-sse2 -m3dnow"
+
+echo "Configuring build with 3DNow support..."
+/usr/bin/env python3 ./configure \
+  --dest-cpu=ia32 \
+  --dest-os=linux \
+  --without-intl \
+  --without-inspector \
+  --without-npm \
+  --without-node-snapshot \
+  --with-simd-support=3dnow
+
+# Build with reduced parallelism to conserve memory
+echo "Starting build with 3DNow support (using single thread to conserve memory)..."
+make -j1
+
+echo ""
+echo "Build completed!"
+echo ""
+echo "To verify the resulting executable:"
+echo "ls -la out/Release/"
+echo ""
+echo "Note: The resulting executable should be compatible with AMD Athlon processors with 3DNow support."

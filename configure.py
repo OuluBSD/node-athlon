@@ -1606,9 +1606,15 @@ def configure_node(o):
   # Set SIMD support variables
   if simd_support == 'sse2':
     o['variables']['node_enable_sse2'] = 'true'
+    o['variables']['node_enable_3dnow'] = 'false'
+    o['variables']['node_enable_altivec'] = 'false'
   elif simd_support == '3dnow':
+    o['variables']['node_enable_sse2'] = 'false'
     o['variables']['node_enable_3dnow'] = 'true'
+    o['variables']['node_enable_altivec'] = 'false'
   elif simd_support == 'altivec':
+    o['variables']['node_enable_sse2'] = 'false'
+    o['variables']['node_enable_3dnow'] = 'false'
     o['variables']['node_enable_altivec'] = 'true'
   elif simd_support == 'none':
     o['variables']['node_enable_sse2'] = 'false'
