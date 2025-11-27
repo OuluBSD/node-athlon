@@ -1,0 +1,1 @@
+# 3DNow Build Fix\n\nThe original highway SIMD compilation error has been fixed by modifying the string-hasher.cc file to use correct 3DNow intrinsics.\n\nThe build now progresses much further but hits a memory limit during V8 compilation due to intensive optimizations.\n\nTo complete the build, you may need to add more swap space or build with reduced parallelism.

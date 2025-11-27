@@ -1,0 +1,1 @@
+Commit message: Successfully fixed highway SIMD compilation error for 3DNow build. The build now progresses much further and fails only due to memory constraints during V8 compilation, not due to the original issue.

@@ -34,7 +34,7 @@ struct ConvertTo8BitHashReader {
 #elif defined(__3dNOW__)
     // 3DNow! implementation for AMD Athlon processors
     __m64 x = *reinterpret_cast<const __m64*>(p);
-    __m64 result = _m_packs_pu16(x, x);  // Pack with 3DNow! instruction
+    __m64 result = _m_packuswb(x, x);  // Pack with 3DNow! instruction
     uint64_t ret = *reinterpret_cast<uint64_t*>(&result);
     _m_empty();  // Clean up 3DNow! state
     return ret;
@@ -80,7 +80,7 @@ struct ConvertTo8BitHashReader {
 #elif defined(__3dNOW__)
     // 3DNow! implementation for AMD Athlon processors
     __m64 x = *reinterpret_cast<const __m64*>(p);
-    __m64 result = _m_packs_pu16(x, x);  // Pack with 3DNow! instruction
+    __m64 result = _m_packuswb(x, x);  // Pack with 3DNow! instruction
     uint64_t ret = *reinterpret_cast<uint64_t*>(&result);
     _m_empty();  // Clean up 3DNow! state
     return ret;
