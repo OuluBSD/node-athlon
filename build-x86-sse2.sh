@@ -9,12 +9,21 @@ echo "Setting up Node.js build for 32-bit x86 with SSE2 support..."
 
 # Parse command line arguments
 CLEAN=false
+JOBS=1
 SHOW_HELP=false
 
 for arg in "$@"; do
   case $arg in
     --clean)
       CLEAN=true
+      ;;
+    -j*)
+      # Extract the number after -j
+      JOBS="${arg#-j}"
+      if ! [[ "$JOBS" =~ ^[0-9]+$ ]] || [ "$JOBS" -le 0 ]; then
+        echo "Error: Invalid argument for -j. Must be a positive integer."
+        exit 1
+      fi
       ;;
     --help|-h)
       SHOW_HELP=true
@@ -29,6 +38,7 @@ if [ "$SHOW_HELP" = true ]; then
   echo "Usage: $0 [OPTIONS]"
   echo "Options:"
   echo "  --clean    Clean previous build before starting"
+  echo "  -jN        Run N build jobs in parallel (default: 1)"
   echo "  --help, -h Show this help message"
   echo ""
   echo "Builds Node.js with SSE2 support for x86 systems."
@@ -61,9 +71,9 @@ echo "Configuring build with SSE2 support..."
   --without-node-snapshot \
   --with-simd-support=sse2
 
-# Build with reduced parallelism to conserve memory
-echo "Starting build with SSE2 support (using single thread to conserve memory)..."
-make -j1
+# Build with specified parallelism
+echo "Starting build with SSE2 support (using $JOBS parallel job(s))..."
+make -j"$JOBS"
 
 echo ""
 echo "Build completed!"
