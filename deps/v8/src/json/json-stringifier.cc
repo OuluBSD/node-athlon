@@ -3312,9 +3312,11 @@ bool FastJsonStringifier<Char>::AppendString(
     const SrcChar* chars, size_t length,
     const DisallowGarbageCollection& no_gc) {
   constexpr int kUseSimdLengthThreshold = 32;
+#if HWY_TARGET != HWY_SCALAR
   if (length >= kUseSimdLengthThreshold) {
     return AppendStringSIMD(chars, length, no_gc);
   }
+#endif  // HWY_TARGET != HWY_SCALAR
   return AppendStringSWAR(chars, length, 0, 0, no_gc);
 }
 
@@ -3370,6 +3372,7 @@ template <typename SrcChar>
 bool FastJsonStringifier<Char>::AppendStringSIMD(
     const SrcChar* chars, size_t length,
     const DisallowGarbageCollection& no_gc) {
+#if HWY_TARGET != HWY_SCALAR
   namespace hw = hwy::HWY_NAMESPACE;
 
   bool needs_escaping = false;
@@ -3416,6 +3419,10 @@ bool FastJsonStringifier<Char>::AppendStringSIMD(
   return AppendStringSWAR(chars, length, start_index, uncopied_src_index,
                           no_gc) ||
          needs_escaping;
+#else
+  // In scalar mode, skip SIMD version and use SWAR directly
+  return AppendStringSWAR(chars, length, 0, 0, no_gc);
+#endif  // HWY_TARGET != HWY_SCALAR
 }
 
 template <typename Char>
