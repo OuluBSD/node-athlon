@@ -62,13 +62,29 @@ fi
 # Set environment variables to use 64-bit PowerPC compilation with AltiVec support
 # Do NOT use -mvsx flag as Power Mac G5 doesn't support VSX instructions
 # Also define the correct endianness for PowerPC (big-endian) to fix OpenSSL endianness issue
-# Ensure B_ENDIAN is defined and L_ENDIAN is undefined to fix endianness conflict
-export CC="gcc -m64 -mcpu=G5 -mtune=G5 -maltivec -mabi=altivec -DSIMDUTF_NO_VSX -DB_ENDIAN -UL_ENDIAN"
-export CXX="g++ -m64 -mcpu=G5 -mtune=G5 -maltivec -mabi=altivec -DSIMDUTF_NO_VSX -DB_ENDIAN -UL_ENDIAN"
-export CPP="cpp -m64 -mcpu=G5 -mtune=G5 -maltivec -mabi=altivec -DSIMDUTF_NO_VSX -DB_ENDIAN -UL_ENDIAN"
+export CC="gcc -m64 -mcpu=G5 -mtune=G5 -maltivec -mabi=altivec -DSIMDUTF_NO_VSX"
+export CXX="g++ -m64 -mcpu=G5 -mtune=G5 -maltivec -mabi=altivec -DSIMDUTF_NO_VSX"
+export CPP="cpp -m64 -mcpu=G5 -mtune=G5 -maltivec -mabi=altivec -DSIMDUTF_NO_VSX"
 
 # Additionally set the architecture for GYP to ensure correct OpenSSL config is used
 export GYP_DEFINES="target_arch=ppc64 v8_target_arch=ppc64"
+
+# Force endianness correction by using -include to include a header that ensures correct endianness
+# Create temporary header file to force correct endianness after all other definitions
+cat > /tmp/ppc64_endian_fix.h << 'EOF'
+// Force correct endianness for PowerPC 64-bit big-endian systems
+#ifdef L_ENDIAN
+#undef L_ENDIAN
+#endif
+#ifndef B_ENDIAN
+#define B_ENDIAN
+#endif
+EOF
+
+# Use -include to force inclusion of our endianness correction header
+export CFLAGS="-include /tmp/ppc64_endian_fix.h"
+export CXXFLAGS="-include /tmp/ppc64_endian_fix.h"
+export CPPFLAGS="-include /tmp/ppc64_endian_fix.h"
 
 echo "Configuring build with AltiVec support..."
 /usr/bin/env python3 ./configure \
@@ -92,3 +108,6 @@ echo "To verify the resulting executable:"
 echo "ls -la out/Release/"
 echo ""
 echo "Note: The resulting executable should be compatible with PowerPC 64-bit systems with AltiVec support (e.g., Power Mac G5)."
+
+# Clean up temporary header file
+rm -f /tmp/ppc64_endian_fix.h
