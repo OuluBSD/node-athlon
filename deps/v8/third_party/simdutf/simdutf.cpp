@@ -8416,7 +8416,23 @@ simd8<bool> operator>(const simd8<T> a, const simd8<T> b) {
 
 template <typename T>
 simd8<bool> operator>=(const simd8<T> a, const simd8<T> b) {
+#if defined(__VSX__) && (defined(__POWER8_VECTOR__) || defined(__GNUC__) && (__GNUC__ > 7 || (__GNUC__ == 7 && __GNUC_MINOR__ >= 0)))
   return vec_cmpge(a.value, b.value);
+#else
+  // Use AltiVec-only approach for systems without VSX (like Power Mac G5)
+  // Manually implement comparison for each element - we'll compare and create a mask
+  vec_u8_t a_bytes = (vec_u8_t)a.value;
+  vec_u8_t b_bytes = (vec_u8_t)b.value;
+  vec_u8_t result = {0};
+  for (int i = 0; i < 16; i++) {
+    if (vec_extract(a_bytes, i) >= vec_extract(b_bytes, i)) {
+      result = vec_insert((unsigned char)0xFF, result, i);
+    } else {
+      result = vec_insert((unsigned char)0x00, result, i);
+    }
+  }
+  return result;
+#endif
 }
 
 template <typename T> struct simd8x64 {
@@ -8606,15 +8622,37 @@ template <> struct simd16<bool> : base16<bool> {
   }
 
   simdutf_really_inline bool any() const {
+#if defined(__VSX__) && (defined(__POWER8_VECTOR__) || defined(__GNUC__) && (__GNUC__ > 7 || (__GNUC__ == 7 && __GNUC_MINOR__ >= 0)))
     const auto tmp = vec_u64_t(value);
-
     return tmp[0] || tmp[1]; // Note: logical or, not binary one
+#else
+    // Use AltiVec-only approach for systems without VSX (like Power Mac G5)
+    // Check if any of the 8 16-bit elements is non-zero
+    vec_u16_t val = (vec_u16_t)this->value;
+    for (int i = 0; i < 8; i++) {
+      if (vec_extract(val, i)) {
+        return true;
+      }
+    }
+    return false;
+#endif
   }
 
   simdutf_really_inline bool is_zero() const {
+#if defined(__VSX__) && (defined(__POWER8_VECTOR__) || defined(__GNUC__) && (__GNUC__ > 7 || (__GNUC__ == 7 && __GNUC_MINOR__ >= 0)))
     const auto tmp = vec_u64_t(value);
-
     return (tmp[0] | tmp[1]) == 0;
+#else
+    // Use AltiVec-only approach for systems without VSX (like Power Mac G5)
+    // Check if all of the 8 16-bit elements are zero
+    vec_u16_t val = (vec_u16_t)this->value;
+    for (int i = 0; i < 8; i++) {
+      if (vec_extract(val, i) != 0) {
+        return false;
+      }
+    }
+    return true;
+#endif
   }
 
   simdutf_really_inline simd16<bool> &operator|=(const simd16<bool> rhs) {
@@ -8740,7 +8778,14 @@ template <> struct simd16<uint16_t> : base16_numeric<uint16_t> {
 
   // Change the endianness
   simdutf_really_inline simd16<uint16_t> swap_bytes() const {
+#if defined(__VSX__) && (defined(__POWER8_VECTOR__) || defined(__GNUC__) && (__GNUC__ > 7 || (__GNUC__ == 7 && __GNUC_MINOR__ >= 0)))
     return vec_revb(value);
+#else
+    // Use AltiVec-only approach for systems without VSX (like Power Mac G5)
+    // Manually swap bytes in each 16-bit element using vec_perm
+    vector unsigned char perm = {1, 0, 3, 2, 5, 4, 7, 6, 9, 8, 11, 10, 13, 12, 15, 14};
+    return (vector_type)vec_perm((vector unsigned char)value, (vector unsigned char)value, perm);
+#endif
   }
 
   // Pack with the unsigned saturation of two uint16_t code units into single
@@ -9040,15 +9085,37 @@ template <> struct simd32<bool> : base32<bool> {
   }
 
   simdutf_really_inline bool any() const {
+#if defined(__VSX__) && (defined(__POWER8_VECTOR__) || defined(__GNUC__) && (__GNUC__ > 7 || (__GNUC__ == 7 && __GNUC_MINOR__ >= 0)))
     const vec_u64_t tmp = (vec_u64_t)value;
-
     return tmp[0] || tmp[1]; // Note: logical or, not binary one
+#else
+    // Use AltiVec-only approach for systems without VSX (like Power Mac G5)
+    // Check if any of the 4 32-bit elements is non-zero
+    vec_u32_t val = (vec_u32_t)this->value;
+    for (int i = 0; i < 4; i++) {
+      if (vec_extract(val, i)) {
+        return true;
+      }
+    }
+    return false;
+#endif
   }
 
   simdutf_really_inline bool is_zero() const {
+#if defined(__VSX__) && (defined(__POWER8_VECTOR__) || defined(__GNUC__) && (__GNUC__ > 7 || (__GNUC__ == 7 && __GNUC_MINOR__ >= 0)))
     const vec_u64_t tmp = (vec_u64_t)value;
-
     return (tmp[0] | tmp[1]) == 0;
+#else
+    // Use AltiVec-only approach for systems without VSX (like Power Mac G5)
+    // Check if all of the 4 32-bit elements are zero
+    vec_u32_t val = (vec_u32_t)this->value;
+    for (int i = 0; i < 4; i++) {
+      if (vec_extract(val, i) != 0) {
+        return false;
+      }
+    }
+    return true;
+#endif
   }
 
   simdutf_really_inline simd32<bool> operator~() const {
@@ -9081,7 +9148,14 @@ template <> struct simd32<uint32_t> : base32_numeric<uint32_t> {
 
   // Change the endianness
   simdutf_really_inline simd32<uint32_t> swap_bytes() const {
+#if defined(__VSX__) && (defined(__POWER8_VECTOR__) || defined(__GNUC__) && (__GNUC__ > 7 || (__GNUC__ == 7 && __GNUC_MINOR__ >= 0)))
     return vec_revb(value);
+#else
+    // Use AltiVec-only approach for systems without VSX (like Power Mac G5)
+    // Manually swap bytes in each 32-bit element using vec_perm
+    vector unsigned char perm = {3, 2, 1, 0, 7, 6, 5, 4, 11, 10, 9, 8, 15, 14, 13, 12};
+    return (vector_type)vec_perm((vector unsigned char)value, (vector unsigned char)value, perm);
+#endif
   }
 
   simdutf_really_inline uint64_t sum() const {
@@ -9120,7 +9194,15 @@ simd32<bool> operator>(const simd32<T> a, const simd32<T> b) {
 
 template <typename T>
 simd32<bool> operator>=(const simd32<T> a, const simd32<T> b) {
+#if defined(__VSX__) && (defined(__POWER8_VECTOR__) || defined(__GNUC__) && (__GNUC__ > 7 || (__GNUC__ == 7 && __GNUC_MINOR__ >= 0)))
   return vec_cmpge(a.value, b.value);
+#else
+  // Use AltiVec-only approach for systems without VSX (like Power Mac G5)
+  // Manually implement comparison for each element - using vec_cmpgt and vec_cmpeq
+  auto greater = vec_cmpgt(a.value, b.value); // a > b
+  auto equal = vec_cmpeq(a.value, b.value);   // a == b
+  return vec_or(greater, equal);              // (a > b) OR (a == b) gives (a >= b)
+#endif
 }
 
 template <typename T>
@@ -40644,8 +40726,19 @@ size_t convert_masked_utf8_to_latin1(const char *input,
   memcpy(latin1_output, buf, 6);
 #else
   // writing 8 bytes even though we only care about the first 6 bytes.
+#if defined(__VSX__) && (defined(__POWER8_VECTOR__) || defined(__GNUC__) && (__GNUC__ > 7 || (__GNUC__ == 7 && __GNUC_MINOR__ >= 0)))
   const auto tmp = vec_u64_t(latin1_packed.value);
   memcpy(latin1_output, &tmp[0], 8);
+#else
+  // Use AltiVec-only approach for systems without VSX (like Power Mac G5)
+  // Extract values manually without using vec_u64_t
+  uint64_t tmp[2];
+  vec_u8_t val = (vec_u8_t)latin1_packed.value;
+  for (int i = 0; i < 8; i++) {
+    ((char*)tmp)[i] = vec_extract(val, i);
+  }
+  memcpy(latin1_output, &tmp[0], 8);
+#endif
 #endif
   latin1_output += 6; // We wrote 6 bytes.
   return consumed;
@@ -41072,6 +41165,7 @@ utf16_to_latin1_t ppc64_convert_utf16_to_latin1(const char16_t *buf, size_t len,
     const uint64_t upper = tmp[0];
   #endif // SIMDUTF_IS_BIG_ENDIAN
 #else
+#if defined(__VSX__) && (defined(__POWER8_VECTOR__) || defined(__GNUC__) && (__GNUC__ > 7 || (__GNUC__ == 7 && __GNUC_MINOR__ >= 0)))
     const auto tmp = vec_u64_t(in.value);
   #if SIMDUTF_IS_BIG_ENDIAN
     memcpy(latin1_output, &tmp[0], 8);
@@ -41080,6 +41174,18 @@ utf16_to_latin1_t ppc64_convert_utf16_to_latin1(const char16_t *buf, size_t len,
     memcpy(latin1_output, &tmp[1], 8);
     const uint64_t upper = tmp[0];
   #endif // SIMDUTF_IS_BIG_ENDIAN
+#else
+    // Use AltiVec-only approach for systems without VSX (like Power Mac G5)
+    __attribute__((aligned(16))) uint64_t tmp[2];
+    in.store((uint8_t*)tmp);
+  #if SIMDUTF_IS_BIG_ENDIAN
+    memcpy(latin1_output, &tmp[0], 8);
+    const uint64_t upper = tmp[1];
+  #else
+    memcpy(latin1_output, &tmp[1], 8);
+    const uint64_t upper = tmp[0];
+  #endif // SIMDUTF_IS_BIG_ENDIAN
+#endif
 #endif   // defined(__clang__)
     // AltiVec
 
@@ -42109,23 +42215,41 @@ static simdutf_really_inline void compress(const vector_u8 data, uint16_t mask,
   // two instructions on most compilers.
 
 #if SIMDUTF_IS_BIG_ENDIAN
+#if defined(__VSX__) && (defined(__POWER8_VECTOR__) || defined(__GNUC__) && (__GNUC__ > 7 || (__GNUC__ == 7 && __GNUC_MINOR__ >= 0)))
   vec_u64_t tmp = {
       tables::base64::thintable_epi8[mask2],
       tables::base64::thintable_epi8[mask1],
   };
 
   auto shufmask = vector_u8(vec_reve(vec_u8_t(tmp)));
+#else
+  // Use AltiVec-only approach for systems without VSX (like Power Mac G5)
+  uint64_t tmp_arr[2] = {
+      tables::base64::thintable_epi8[mask2],
+      tables::base64::thintable_epi8[mask1],
+  };
+  auto shufmask = vector_u8(vec_reve(*(vector_u8_t*)tmp_arr));
+#endif
 
   // we increment by 0x08 the second half of the mask
   shufmask =
       shufmask + vector_u8(0, 0, 0, 0, 0, 0, 0, 0, 8, 8, 8, 8, 8, 8, 8, 8);
 #else
+#if defined(__VSX__) && (defined(__POWER8_VECTOR__) || defined(__GNUC__) && (__GNUC__ > 7 || (__GNUC__ == 7 && __GNUC_MINOR__ >= 0)))
   vec_u64_t tmp = {
       tables::base64::thintable_epi8[mask1],
       tables::base64::thintable_epi8[mask2],
   };
 
   auto shufmask = vector_u8(vec_u8_t(tmp));
+#else
+  // Use AltiVec-only approach for systems without VSX (like Power Mac G5)
+  uint64_t tmp_arr[2] = {
+      tables::base64::thintable_epi8[mask1],
+      tables::base64::thintable_epi8[mask2],
+  };
+  auto shufmask = vector_u8(*(vector_u8_t*)tmp_arr);
+#endif
 
   // we increment by 0x08 the second half of the mask
   shufmask =
