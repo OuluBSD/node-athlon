@@ -72,41 +72,11 @@ export CPP="cpp -m64 -mcpu=G5 -mtune=G5 -maltivec -mabi=altivec -DSIMDUTF_NO_VSX
 export GYP_DEFINES="target_arch=ppc64 v8_target_arch=ppc64"
 export GYP_CROSSCOMPILE=1
 
-# Force endianness correction by using -include to include a header that ensures correct endianness
-# Create temporary header file to force correct endianness after all other definitions
-cat > /tmp/ppc64_endian_fix.h << 'EOF'
-// Force correct endianness for PowerPC 64-bit big-endian systems
-// This prevents silent failures where wrong endianness causes incorrect code paths
-#ifdef L_ENDIAN
-#undef L_ENDIAN
-#endif
-#ifndef B_ENDIAN
-#define B_ENDIAN
-#endif
-
-// Also explicitly define the endianness detection macros to prevent any confusion
-#undef __BYTE_ORDER__
-#undef __ORDER_LITTLE_ENDIAN__
-#undef __ORDER_BIG_ENDIAN__
-
-// Define that this is a big-endian system
-#define __BYTE_ORDER__ __ORDER_BIG_ENDIAN__
-#define __ORDER_LITTLE_ENDIAN__ 1234
-#define __ORDER_BIG_ENDIAN__ 4321
-
-// For additional compatibility with endianness detection code
-#if defined(__GNUC__) && defined(__PPC64__)
-  // Ensure GCC built-in endianness macros are correct
-  #undef __LITTLE_ENDIAN__
-  #undef __BIG_ENDIAN__
-  #define __BIG_ENDIAN__ 1
-#endif
-EOF
-
-# Use -include to force inclusion of our endianness correction header
-export CFLAGS="-include /tmp/ppc64_endian_fix.h"
-export CXXFLAGS="-include /tmp/ppc64_endian_fix.h"
-export CPPFLAGS="-include /tmp/ppc64_endian_fix.h"
+# Apply endianness correction flags specifically for OpenSSL and other affected libraries
+# This approach targets the specific issue without interfering with other PowerPC code like V8
+export CFLAGS="$CFLAGS -DB_ENDIAN -UL_ENDIAN"
+export CXXFLAGS="$CXXFLAGS -DB_ENDIAN -UL_ENDIAN"
+export CPPFLAGS="$CPPFLAGS -DB_ENDIAN -UL_ENDIAN"
 
 echo "Configuring build with AltiVec support..."
 /usr/bin/env python3 ./configure \
