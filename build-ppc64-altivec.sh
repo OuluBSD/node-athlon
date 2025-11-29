@@ -62,12 +62,13 @@ fi
 # Set environment variables to use 64-bit PowerPC compilation with AltiVec support
 # Do NOT use -mvsx flag as Power Mac G5 doesn't support VSX instructions
 # Also define the correct endianness for PowerPC (big-endian) to fix OpenSSL endianness issue
+# Ensure B_ENDIAN is defined and L_ENDIAN is undefined to fix endianness conflict
 export CC="gcc -m64 -mcpu=G5 -mtune=G5 -maltivec -mabi=altivec -DSIMDUTF_NO_VSX -DB_ENDIAN -UL_ENDIAN"
 export CXX="g++ -m64 -mcpu=G5 -mtune=G5 -maltivec -mabi=altivec -DSIMDUTF_NO_VSX -DB_ENDIAN -UL_ENDIAN"
 export CPP="cpp -m64 -mcpu=G5 -mtune=G5 -maltivec -mabi=altivec -DSIMDUTF_NO_VSX -DB_ENDIAN -UL_ENDIAN"
-# Set additional environment variables for proper endianness detection
-export CFLAGS_EXTRA="-DB_ENDIAN -UL_ENDIAN"
-export CXXFLAGS_EXTRA="-DB_ENDIAN -UL_ENDIAN"
+
+# Additionally set the architecture for GYP to ensure correct OpenSSL config is used
+export GYP_DEFINES="target_arch=ppc64 v8_target_arch=ppc64"
 
 echo "Configuring build with AltiVec support..."
 /usr/bin/env python3 ./configure \
