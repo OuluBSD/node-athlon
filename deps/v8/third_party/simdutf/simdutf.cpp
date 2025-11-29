@@ -9058,14 +9058,12 @@ template <typename T> struct base32_numeric : base32<T> {
     return vec_xl(0, reinterpret_cast<const T *>(values));
 #else
     // Use AltiVec-only approach for systems without VSX (like Power Mac G5)
-    base32_numeric<T> result;
     const T* src = reinterpret_cast<const T *>(values);
     T temp[4];  // 4 elements of 32-bit each = 16 bytes
     for (int i = 0; i < 4; i++) {
       temp[i] = src[i];
     }
-    result.value = *(vector_type*)temp;
-    return result;
+    return simd32<T>(*(vector_type*)temp);
 #endif
   }
 
