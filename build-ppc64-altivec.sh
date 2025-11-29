@@ -58,9 +58,10 @@ else
 fi
 
 # Set environment variables to use 64-bit PowerPC compilation with AltiVec support
-export CC="gcc -m64 -mcpu=G5 -mtune=G5 -maltivec -mabi=altivec"
-export CXX="g++ -m64 -mcpu=G5 -mtune=G5 -maltivec -mabi=altivec"
-export CPP="cpp -m64 -mcpu=G5 -mtune=G5 -maltivec -mabi=altivec"
+# Do NOT use -mvsx flag as Power Mac G5 doesn't support VSX instructions
+export CC="gcc -m64 -mcpu=G5 -mtune=G5 -maltivec -mabi=altivec -DSIMDUTF_NO_VSX"
+export CXX="g++ -m64 -mcpu=G5 -mtune=G5 -maltivec -mabi=altivec -DSIMDUTF_NO_VSX"
+export CPP="cpp -m64 -mcpu=G5 -mtune=G5 -maltivec -mabi=altivec -DSIMDUTF_NO_VSX"
 
 echo "Configuring build with AltiVec support..."
 /usr/bin/env python3 ./configure \

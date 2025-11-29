@@ -7800,8 +7800,13 @@ using vec_u16_t = __vector unsigned short;
 using vec_i16_t = __vector signed short;
 using vec_u32_t = __vector unsigned int;
 using vec_i32_t = __vector signed int;
+#if defined(__VSX__) && (defined(__POWER8_VECTOR__) || defined(__GNUC__) && (__GNUC__ > 7 || (__GNUC__ == 7 && __GNUC_MINOR__ >= 0)))
 using vec_u64_t = __vector unsigned long long;
 using vec_i64_t = __vector signed long long;
+#else
+// On older PowerPC systems without VSX (like Power Mac G5), 
+// we'll define fallback behavior for functions that require VSX
+#endif
 
 // clang-format off
 template <typename T> struct vector_u8_type_for_element_aux {
@@ -7844,6 +7849,7 @@ template <typename T>
 using vector_u32_type_for_element =
     typename vector_u32_type_for_element_aux<T>::type;
 
+#if defined(__VSX__) && (defined(__POWER8_VECTOR__) || defined(__GNUC__) && (__GNUC__ > 7 || (__GNUC__ == 7 && __GNUC_MINOR__ >= 0)))
 template <typename T> uint16_t move_mask_u8(T vec) {
   const vec_u8_t perm_mask = {15 * 8, 14 * 8, 13 * 8, 12 * 8, 11 * 8, 10 * 8,
                               9 * 8,  8 * 8,  7 * 8,  6 * 8,  5 * 8,  4 * 8,
@@ -7856,6 +7862,21 @@ template <typename T> uint16_t move_mask_u8(T vec) {
   return static_cast<uint16_t>(result[1]);
 #endif
 }
+#else
+// Fallback implementation for systems without VSX (like Power Mac G5)
+template <typename T> uint16_t move_mask_u8(T vec) {
+  // Implement a scalar fallback for move_mask_u8 functionality
+  uint16_t result = 0;
+  vec_u8_t v = (vec_u8_t)vec;
+  for (int i = 0; i < 16; i++) {
+    // Extract the high bit of each byte and set corresponding bit in result
+    if (v[i] & 0x80) {
+      result |= (1 << i);
+    }
+  }
+  return result;
+}
+#endif
 
 /* begin file src/simdutf/ppc64/simd8-inl.h */
 // file included directly
@@ -7880,9 +7901,25 @@ template <typename T> struct base8 {
     return this->value;
   }
 
+#if defined(__VSX__) && (defined(__POWER8_VECTOR__) || defined(__GNUC__) && (__GNUC__ > 7 || (__GNUC__ == 7 && __GNUC_MINOR__ >= 0)))
   template <typename U> simdutf_really_inline void store(U *ptr) const {
     vec_xst(value, 0, reinterpret_cast<T *>(ptr));
   }
+#else
+  template <typename U> simdutf_really_inline void store(U *ptr) const {
+    // Use AltiVec-only approach for systems without VSX (like Power Mac G5)
+    T* dst = reinterpret_cast<T *>(ptr);
+    if (sizeof(T) == 1) {
+      // For 8-bit elements, use vec_ste (store element) in a loop
+      for (int i = 0; i < 16; i++) {
+        dst[i] = vec_extract((vec_u8_t)value, i);
+      }
+    } else {
+      // For other types, store the full vector
+      *(vector_type*)dst = this->value;
+    }
+  }
+#endif
 
   template <typename SIMD8> void operator|=(const SIMD8 other) {
     this->value = vec_or(this->value, other.value);
@@ -8098,10 +8135,31 @@ template <typename T> struct base8_numeric : base8<T> {
 
   static simdutf_really_inline simd8<T> zero() { return splat(0); }
 
+#if defined(__VSX__) && (defined(__POWER8_VECTOR__) || defined(__GNUC__) && (__GNUC__ > 7 || (__GNUC__ == 7 && __GNUC_MINOR__ >= 0)))
   template <typename U>
   static simdutf_really_inline simd8<T> load(const U *values) {
     return vec_xl(0, reinterpret_cast<const T *>(values));
   }
+#else
+  template <typename U>
+  static simdutf_really_inline simd8<T> load(const U *values) {
+    // Use AltiVec-only approach for systems without VSX (like Power Mac G5)
+    const T* src = reinterpret_cast<const T *>(values);
+    if (sizeof(T) == 1) {
+      // For 8-bit elements, use AltiVec load and store functions
+      vec_u8_t v1 = vec_ld(0, (unsigned char*)src);
+      vec_u8_t v2 = vec_ld(15, (unsigned char*)src);  // Get overlapping bytes to complete 16 bytes
+      return (vector_type)vec_perm(v1, v2, vec_lvsl(0, (unsigned char*)src));
+    } else {
+      // For other types, implement a manual load
+      T temp[16 / sizeof(T)];
+      for (int i = 0; i < (16 / sizeof(T)); i++) {
+        temp[i] = src[i];
+      }
+      return *(vector_type*)temp;
+    }
+  }
+#endif
 
   // Repeat 16 values as many times as necessary (usually for lookup tables)
   static simdutf_really_inline simd8<T> repeat_16(T v0, T v1, T v2, T v3, T v4,
@@ -8575,9 +8633,21 @@ template <typename T> struct base16_numeric : base16<T> {
   static simdutf_really_inline simd16<T> zero() { return splat(0); }
 
   template <typename U>
+#if defined(__VSX__) && (defined(__POWER8_VECTOR__) || defined(__GNUC__) && (__GNUC__ > 7 || (__GNUC__ == 7 && __GNUC_MINOR__ >= 0)))
   static simdutf_really_inline simd16<T> load(const U *ptr) {
     return vec_xl(0, reinterpret_cast<const T *>(ptr));
   }
+#else
+  static simdutf_really_inline simd16<T> load(const U *ptr) {
+    // Use AltiVec-only approach for systems without VSX (like Power Mac G5)
+    const T* src = reinterpret_cast<const T *>(ptr);
+    T temp[8];  // 8 elements of 16-bit each = 16 bytes
+    for (int i = 0; i < 8; i++) {
+      temp[i] = src[i];
+    }
+    return *(vector_type*)temp;
+  }
+#endif
 
   simdutf_really_inline base16_numeric() : base16<T>() {}
   simdutf_really_inline base16_numeric(const vector_type _value)
@@ -8585,11 +8655,19 @@ template <typename T> struct base16_numeric : base16<T> {
 
   // Store to array
   template <typename U> simdutf_really_inline void store(U *dst) const {
+#if defined(__VSX__) && (defined(__POWER8_VECTOR__) || defined(__GNUC__) && (__GNUC__ > 7 || (__GNUC__ == 7 && __GNUC_MINOR__ >= 0)))
 #if defined(__clang__)
     return vec_xst(this->value, 0, reinterpret_cast<T *>(dst));
 #else
     return vec_xst(this->value, 0, reinterpret_cast<vector_type *>(dst));
 #endif // defined(__clang__)
+#else
+    // Use AltiVec-only approach for systems without VSX (like Power Mac G5)
+    T* ptr = reinterpret_cast<T *>(dst);
+    for (int i = 0; i < 8; i++) {  // 8 elements of 16-bit each = 16 bytes
+      ptr[i] = vec_extract((vec_u16_t)this->value, i);
+    }
+#endif
   }
 
   // Override to distinguish from bool version
@@ -8820,17 +8898,38 @@ template <typename T> struct base32 {
   // Splat for scalar
   simdutf_really_inline base32(T scalar) : value{vec_splats(scalar)} {}
 
+#if defined(__VSX__) && (defined(__POWER8_VECTOR__) || defined(__GNUC__) && (__GNUC__ > 7 || (__GNUC__ == 7 && __GNUC_MINOR__ >= 0)))
   template <typename Pointer>
   simdutf_really_inline base32(const Pointer *ptr)
       : base32(vec_xl(0, reinterpret_cast<const T *>(ptr))) {}
+#else
+  template <typename Pointer>
+  simdutf_really_inline base32(const Pointer *ptr) {
+    // Use AltiVec-only approach for systems without VSX (like Power Mac G5)
+    const T* src = reinterpret_cast<const T *>(ptr);
+    T temp[4];  // 4 elements of 32-bit each = 16 bytes
+    for (int i = 0; i < 4; i++) {
+      temp[i] = src[i];
+    }
+    this->value = *(vector_type*)temp;
+  }
+#endif
 
   // Store to array
   template <typename U> simdutf_really_inline void store(U *dst) const {
+#if defined(__VSX__) && (defined(__POWER8_VECTOR__) || defined(__GNUC__) && (__GNUC__ > 7 || (__GNUC__ == 7 && __GNUC_MINOR__ >= 0)))
 #if defined(__clang__)
     return vec_xst(this->value, 0, reinterpret_cast<T *>(dst));
 #else
     return vec_xst(this->value, 0, reinterpret_cast<vector_type *>(dst));
 #endif // defined(__clang__)
+#else
+    // Use AltiVec-only approach for systems without VSX (like Power Mac G5)
+    T* ptr = reinterpret_cast<T *>(dst);
+    for (int i = 0; i < 4; i++) {  // 4 elements of 32-bit each = 16 bytes
+      ptr[i] = vec_extract((vec_u32_t)this->value, i);
+    }
+#endif
   }
   void dump(const char *name = nullptr) const {
 #ifdef SIMDUTF_LOGGING
@@ -8838,8 +8937,16 @@ template <typename T> struct base32 {
       printf("%-10s = ", name);
     }
 
+#if defined(__VSX__) && (defined(__POWER8_VECTOR__) || defined(__GNUC__) && (__GNUC__ > 7 || (__GNUC__ == 7 && __GNUC_MINOR__ >= 0)))
     uint32_t tmp[4];
     vec_xst(value, 0, reinterpret_cast<vector_type *>(tmp));
+#else
+    // Use AltiVec-only approach for systems without VSX (like Power Mac G5)
+    uint32_t tmp[4];
+    for (int i = 0; i < 4; i++) {
+      tmp[i] = vec_extract((vec_u32_t)value, i);
+    }
+#endif
     for (int i = 0; i < 4; i++) {
       if (i == 0) {
         printf("[%08x", tmp[i]);
