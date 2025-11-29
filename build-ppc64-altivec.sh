@@ -71,7 +71,8 @@ echo "Configuring build with AltiVec support..."
   --without-inspector \
   --without-npm \
   --without-node-snapshot \
-  --with-simd-support=altivec
+  --with-simd-support=altivec \
+  --openssl-no-asm
 
 # Build with specified parallelism
 echo "Starting build with AltiVec support (using $JOBS parallel job(s))..."
