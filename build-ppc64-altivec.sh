@@ -62,9 +62,10 @@ fi
 # Set environment variables to use 64-bit PowerPC compilation with AltiVec support
 # Do NOT use -mvsx flag as Power Mac G5 doesn't support VSX instructions
 # Also define the correct endianness for PowerPC (big-endian) to fix OpenSSL endianness issue
-export CC="gcc -m64 -mcpu=G5 -mtune=G5 -maltivec -mabi=altivec -DSIMDUTF_NO_VSX"
-export CXX="g++ -m64 -mcpu=G5 -mtune=G5 -maltivec -mabi=altivec -DSIMDUTF_NO_VSX"
-export CPP="cpp -m64 -mcpu=G5 -mtune=G5 -maltivec -mabi=altivec -DSIMDUTF_NO_VSX"
+# Disable PowerPC-specific simdjson implementation that requires VSX instructions
+export CC="gcc -m64 -mcpu=G5 -mtune=G5 -maltivec -mabi=altivec -DSIMDUTF_NO_VSX -DSIMDJSON_DISABLE_PPC64"
+export CXX="g++ -m64 -mcpu=G5 -mtune=G5 -maltivec -mabi=altivec -DSIMDUTF_NO_VSX -DSIMDJSON_DISABLE_PPC64"
+export CPP="cpp -m64 -mcpu=G5 -mtune=G5 -maltivec -mabi=altivec -DSIMDUTF_NO_VSX -DSIMDJSON_DISABLE_PPC64"
 
 # Additionally set the architecture for GYP to ensure correct OpenSSL config is used
 # Include endianness information to help Node.js build system make correct decisions
