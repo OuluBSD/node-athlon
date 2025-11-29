@@ -7960,6 +7960,7 @@ template <typename T> struct base8 {
       const vector_type v0 = vec_perm(value, zero, perm_lo);
       const vector_type v1 = vec_perm(value, zero, perm_hi);
 
+#if defined(__VSX__) && (defined(__POWER8_VECTOR__) || defined(__GNUC__) && (__GNUC__ > 7 || (__GNUC__ == 7 && __GNUC_MINOR__ >= 0)))
 #if defined(__clang__)
       vec_xst(v0, 0, reinterpret_cast<T *>(p));
       vec_xst(v1, 16, reinterpret_cast<T *>(p));
@@ -7967,6 +7968,12 @@ template <typename T> struct base8 {
       vec_xst(v0, 0, reinterpret_cast<vector_type *>(p));
       vec_xst(v1, 16, reinterpret_cast<vector_type *>(p));
 #endif // defined(__clang__)
+#else
+    // Use AltiVec-only approach for systems without VSX (like Power Mac G5)
+    for (int i = 0; i < 8; i++) {
+      reinterpret_cast<T *>(p)[i] = vec_extract((vec_u8_t)value, i);
+    }
+#endif
     } else {
       const vec_u8_t perm_lo = {0, 16, 1, 16, 2, 16, 3, 16,
                                 4, 16, 5, 16, 6, 16, 7, 16};
@@ -7976,6 +7983,7 @@ template <typename T> struct base8 {
       const vector_type v0 = vec_perm(value, zero, perm_lo);
       const vector_type v1 = vec_perm(value, zero, perm_hi);
 
+#if defined(__VSX__) && (defined(__POWER8_VECTOR__) || defined(__GNUC__) && (__GNUC__ > 7 || (__GNUC__ == 7 && __GNUC_MINOR__ >= 0)))
 #if defined(__clang__)
       vec_xst(v0, 0, reinterpret_cast<T *>(p));
       vec_xst(v1, 16, reinterpret_cast<T *>(p));
@@ -7983,6 +7991,12 @@ template <typename T> struct base8 {
       vec_xst(v0, 0, reinterpret_cast<vector_type *>(p));
       vec_xst(v1, 16, reinterpret_cast<vector_type *>(p));
 #endif // defined(__clang__)
+#else
+    // Use AltiVec-only approach for systems without VSX (like Power Mac G5)
+    for (int i = 0; i < 8; i++) {
+      reinterpret_cast<T *>(p)[i] = vec_extract((vec_u8_t)value, i);
+    }
+#endif
     }
   }
 
@@ -8027,6 +8041,7 @@ template <typename T> struct base8 {
 
     constexpr size_t n = base8<T>::SIZE;
 
+#if defined(__VSX__) && (defined(__POWER8_VECTOR__) || defined(__GNUC__) && (__GNUC__ > 7 || (__GNUC__ == 7 && __GNUC_MINOR__ >= 0)))
 #if defined(__clang__)
     vec_xst(v0, 0 * n, reinterpret_cast<T *>(p));
     vec_xst(v1, 1 * n, reinterpret_cast<T *>(p));
@@ -8038,6 +8053,12 @@ template <typename T> struct base8 {
     vec_xst(v2, 2 * n, reinterpret_cast<vector_type *>(p));
     vec_xst(v3, 3 * n, reinterpret_cast<vector_type *>(p));
 #endif // defined(__clang__)
+#else
+    // Use AltiVec-only approach for systems without VSX (like Power Mac G5)
+    for (int i = 0; i < 16; i++) {
+      reinterpret_cast<char32_t *>(p)[i] = vec_extract((vec_u8_t)value, i);
+    }
+#endif
   }
 
   simdutf_really_inline void store_words_as_utf32(char32_t *p) const {
@@ -8060,6 +8081,7 @@ template <typename T> struct base8 {
 
     constexpr size_t n = base8<T>::SIZE;
 
+#if defined(__VSX__) && (defined(__POWER8_VECTOR__) || defined(__GNUC__) && (__GNUC__ > 7 || (__GNUC__ == 7 && __GNUC_MINOR__ >= 0)))
 #if defined(__clang__)
     vec_xst(v0, 0 * n, reinterpret_cast<T *>(p));
     vec_xst(v1, 1 * n, reinterpret_cast<T *>(p));
@@ -8067,6 +8089,12 @@ template <typename T> struct base8 {
     vec_xst(v0, 0 * n, reinterpret_cast<vector_type *>(p));
     vec_xst(v1, 1 * n, reinterpret_cast<vector_type *>(p));
 #endif // defined(__clang__)
+#else
+    // Use AltiVec-only approach for systems without VSX (like Power Mac G5)
+    for (int i = 0; i < 8; i++) {
+      reinterpret_cast<char32_t *>(p)[i] = vec_extract((vec_u8_t)value, i);
+    }
+#endif
   }
 
   simdutf_really_inline void store_ascii_as_utf32(char32_t *p) const {
@@ -8570,8 +8598,16 @@ template <typename T> struct base16 {
   simdutf_really_inline base16(const vector_type _value) : value{_value} {}
   void dump() const {
 #ifdef SIMDUTF_LOGGING
+#if defined(__VSX__) && (defined(__POWER8_VECTOR__) || defined(__GNUC__) && (__GNUC__ > 7 || (__GNUC__ == 7 && __GNUC_MINOR__ >= 0)))
     uint16_t tmp[8];
     vec_xst(value, 0, reinterpret_cast<vector_type *>(tmp));
+#else
+    // Use AltiVec-only approach for systems without VSX (like Power Mac G5)
+    uint16_t tmp[8];
+    for (int i = 0; i < 8; i++) {
+      tmp[i] = vec_extract((vec_u16_t)value, i);
+    }
+#endif
     for (int i = 0; i < 8; i++) {
       if (i == 0) {
         printf("[%04x", tmp[i]);
@@ -9018,7 +9054,19 @@ template <typename T> struct base32_numeric : base32<T> {
 
   template <typename U>
   static simdutf_really_inline simd32<T> load(const U *values) {
+#if defined(__VSX__) && (defined(__POWER8_VECTOR__) || defined(__GNUC__) && (__GNUC__ > 7 || (__GNUC__ == 7 && __GNUC_MINOR__ >= 0)))
     return vec_xl(0, reinterpret_cast<const T *>(values));
+#else
+    // Use AltiVec-only approach for systems without VSX (like Power Mac G5)
+    base32_numeric<T> result;
+    const T* src = reinterpret_cast<const T *>(values);
+    T temp[4];  // 4 elements of 32-bit each = 16 bytes
+    for (int i = 0; i < 4; i++) {
+      temp[i] = src[i];
+    }
+    result.value = *(vector_type*)temp;
+    return result;
+#endif
   }
 
   simdutf_really_inline base32_numeric() : base32<T>() {}
@@ -42228,7 +42276,17 @@ static simdutf_really_inline void compress(const vector_u8 data, uint16_t mask,
       tables::base64::thintable_epi8[mask2],
       tables::base64::thintable_epi8[mask1],
   };
-  auto shufmask = vector_u8(vec_reve(*(vector_u8_t*)tmp_arr));
+  // Use AltiVec-only approach for systems without VSX (like Power Mac G5)
+  // vec_reve is VSX-only, so we need to implement the reversal manually
+  vec_u8_t reversed = {((unsigned char*)tmp_arr)[15], ((unsigned char*)tmp_arr)[14], 
+                       ((unsigned char*)tmp_arr)[13], ((unsigned char*)tmp_arr)[12],
+                       ((unsigned char*)tmp_arr)[11], ((unsigned char*)tmp_arr)[10],
+                       ((unsigned char*)tmp_arr)[9],  ((unsigned char*)tmp_arr)[8],
+                       ((unsigned char*)tmp_arr)[7],  ((unsigned char*)tmp_arr)[6],
+                       ((unsigned char*)tmp_arr)[5],  ((unsigned char*)tmp_arr)[4],
+                       ((unsigned char*)tmp_arr)[3],  ((unsigned char*)tmp_arr)[2],
+                       ((unsigned char*)tmp_arr)[1],  ((unsigned char*)tmp_arr)[0]};
+  auto shufmask = vector_u8(reversed);
 #endif
 
   // we increment by 0x08 the second half of the mask
@@ -42248,7 +42306,8 @@ static simdutf_really_inline void compress(const vector_u8 data, uint16_t mask,
       tables::base64::thintable_epi8[mask1],
       tables::base64::thintable_epi8[mask2],
   };
-  auto shufmask = vector_u8(*(vector_u8_t*)tmp_arr);
+  // Use AltiVec-only approach for systems without VSX (like Power Mac G5)
+  auto shufmask = vector_u8(*(vec_u8_t*)tmp_arr);
 #endif
 
   // we increment by 0x08 the second half of the mask
