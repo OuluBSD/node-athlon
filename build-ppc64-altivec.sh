@@ -67,17 +67,38 @@ export CXX="g++ -m64 -mcpu=G5 -mtune=G5 -maltivec -mabi=altivec -DSIMDUTF_NO_VSX
 export CPP="cpp -m64 -mcpu=G5 -mtune=G5 -maltivec -mabi=altivec -DSIMDUTF_NO_VSX"
 
 # Additionally set the architecture for GYP to ensure correct OpenSSL config is used
+# Include endianness information to help Node.js build system make correct decisions
 export GYP_DEFINES="target_arch=ppc64 v8_target_arch=ppc64"
+export GYP_CROSSCOMPILE=1
 
 # Force endianness correction by using -include to include a header that ensures correct endianness
 # Create temporary header file to force correct endianness after all other definitions
 cat > /tmp/ppc64_endian_fix.h << 'EOF'
 // Force correct endianness for PowerPC 64-bit big-endian systems
+// This prevents silent failures where wrong endianness causes incorrect code paths
 #ifdef L_ENDIAN
 #undef L_ENDIAN
 #endif
 #ifndef B_ENDIAN
 #define B_ENDIAN
+#endif
+
+// Also explicitly define the endianness detection macros to prevent any confusion
+#undef __BYTE_ORDER__
+#undef __ORDER_LITTLE_ENDIAN__
+#undef __ORDER_BIG_ENDIAN__
+
+// Define that this is a big-endian system
+#define __BYTE_ORDER__ __ORDER_BIG_ENDIAN__
+#define __ORDER_LITTLE_ENDIAN__ 1234
+#define __ORDER_BIG_ENDIAN__ 4321
+
+// For additional compatibility with endianness detection code
+#if defined(__GNUC__) && defined(__PPC64__)
+  // Ensure GCC built-in endianness macros are correct
+  #undef __LITTLE_ENDIAN__
+  #undef __BIG_ENDIAN__
+  #define __BIG_ENDIAN__ 1
 #endif
 EOF
 
