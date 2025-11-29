@@ -6,6 +6,8 @@
 
 set -e  # Exit on error
 
+export LC_ALL=C
+
 echo "Setting up Node.js build for 64-bit PowerPC with AltiVec support..."
 
 # Parse command line arguments
