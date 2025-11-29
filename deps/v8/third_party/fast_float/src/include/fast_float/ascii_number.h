@@ -83,18 +83,12 @@ fastfloat_really_inline uint64_t simd_read8_to_u64(const __m128i data) {
   return ret;
 #elif defined(__SSE2__)
   const __m128i packed = _mm_packus_epi16(data, data);
-#ifdef FASTFLOAT_64BIT
-#ifdef _M_IX86  // 32-bit x86 - _mm_cvtsi128_si64 might not be available
-  // Extract lower 64 bits using alternative method
-  return _mm_cvtsi128_si32(packed) | (static_cast<uint64_t>(_mm_cvtsi128_si32(_mm_srli_si128(packed, 4))) << 32);
-#else
+#if defined(__x86_64__) || defined(_M_X64)
   return uint64_t(_mm_cvtsi128_si64(packed));
-#endif
 #else
-  uint64_t value;
-  // Visual Studio + older versions of GCC don't support _mm_storeu_si64
-  _mm_storel_epi64(reinterpret_cast<__m128i *>(&value), packed);
-  return value;
+  // On 32-bit x86 systems or other architectures, use alternative method
+  // Extract lower 64 bits using alternative method
+  return _mm_cvtsi128_si32(packed) | (static_cast<uint64_t>(_mm_cvtsi128_si32(_mm_shuffle_epi32(packed, 1))) << 32);
 #endif
 #else
   // Fallback: process without SIMD

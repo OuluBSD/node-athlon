@@ -190,11 +190,12 @@ inline int64_t V128_Low64(const V128 l) {
   _m_empty();  // Clean up 3DNow! state
   return result;
 #elif defined(__SSE2__)
-#ifdef _M_IX86  // 32-bit x86 - _mm_cvtsi128_si64 might not be available
-  // Extract lower 64 bits using alternative method
-  return _mm_cvtsi128_si32(l) | (static_cast<int64_t>(_mm_cvtsi128_si32(_mm_srli_si128(l, 4))) << 32);
-#else
+#if defined(__x86_64__) || defined(_M_X64)
   return _mm_cvtsi128_si64(l);
+#else
+  // On 32-bit x86 systems or other architectures, use alternative method
+  // Extract lower 64 bits using alternative method
+  return _mm_cvtsi128_si32(l) | (static_cast<int64_t>(_mm_cvtsi128_si32(_mm_shuffle_epi32(l, 1))) << 32);
 #endif
 #else
   // Fallback - should not reach here since this function is in SIMD-specific code

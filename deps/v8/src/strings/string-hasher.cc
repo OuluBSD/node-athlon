@@ -26,30 +26,41 @@ struct ConvertTo8BitHashReader {
 #ifdef __ALTIVEC__
     // Altivec implementation for PowerPC systems (like G5)
     vector unsigned short x = vec_ld(0, p);
-    vector unsigned char packed = vec_pack(x, x);
+    vector unsigned short y = vec_ld(8, p); // Load second set of 16-bit values
+    vector unsigned char packed = vec_pack(x, y);
     // Extract 64-bit result from the packed vector
     uint64_t result;
-    vec_ste((vector unsigned long long)packed, 0, (unsigned long long*)&result);
+    // Use vec_extract to get the lower 64 bits properly
+    union { vector unsigned char v; uint64_t u64[2]; } converter = { .v = packed };
+    result = converter.u64[0];
     return result;
 #elif defined(__3dNOW__)
     // 3DNow! implementation for AMD Athlon processors
-    __m64 x = *reinterpret_cast<const __m64*>(p);
-    __m64 result = _m_packuswb(x, x);  // Pack with 3DNow! instruction
-    uint64_t ret = *reinterpret_cast<uint64_t*>(&result);
+    // Since _m_packuswb isn't always available, we'll use a manual approach
+    uint64_t result = 0;
+    for (int i = 0; i < 8; ++i) {
+        result |= (static_cast<uint64_t>(p[i]) & 0xFF) << (i * 8);
+    }
     _m_empty();  // Clean up 3DNow! state
-    return ret;
+    return result;
 #elif defined(__SSE2__)
     // Load 16-bit values into 2 64-bit registers and pack them to 8-bit values
     __m128i x_low = _mm_loadl_epi64(reinterpret_cast<const __m128i*>(p));      // Load first 4 16-bit values
     __m128i x_high = _mm_loadl_epi64(reinterpret_cast<const __m128i*>(p + 4)); // Load last 4 16-bit values
     __m128i packed = _mm_packus_epi16(x_low, x_high);
-#ifdef _M_IX86  // 32-bit x86 - _mm_cvtsi128_si64 might not be available
-    // Extract 64-bit result using alternative method that works on 32-bit systems
+#ifdef V8_TARGET_ARCH_32_BIT
+    // On 32-bit systems, use alternative method for 64-bit extraction
     uint32_t low = _mm_cvtsi128_si32(packed);
-    uint32_t high = _mm_cvtsi128_si32(_mm_shuffle_epi32(packed, _MM_SHUFFLE(1,1,1,1)));
+    uint32_t high = _mm_cvtsi128_si32(_mm_shuffle_epi32(packed, 1));
     return low | (static_cast<uint64_t>(high) << 32);
-#else
+#elif defined(__x86_64__) || defined(_M_X64)
+    // On 64-bit systems, _mm_cvtsi128_si64 is available
     return _mm_cvtsi128_si64(packed);
+#else
+    // For other cases, use the portable method
+    uint32_t low = _mm_cvtsi128_si32(packed);
+    uint32_t high = _mm_cvtsi128_si32(_mm_shuffle_epi32(packed, 1));
+    return low | (static_cast<uint64_t>(high) << 32);
 #endif
 #elif defined(__ARM_NEON__)
     uint16x8_t x;
@@ -72,18 +83,20 @@ struct ConvertTo8BitHashReader {
 #ifdef __ALTIVEC__
     // Altivec implementation for PowerPC systems (like G5)
     vector unsigned short x = vec_ld(0, p);
-    vector unsigned char packed = vec_pack(x, x);
-    // Extract 32-bit result from the packed vector (as low 64 bits for consistency)
-    uint64_t result;
-    vec_ste((vector unsigned long long)packed, 0, (unsigned long long*)&result);
-    return result;
+    vector unsigned short y = vec_splat_s16(0); // Zero vector for packing
+    vector unsigned char packed = vec_pack(x, y);
+    // Extract 32-bit result from the packed vector (as low 32 bits)
+    union { vector unsigned char v; uint32_t u32[4]; } converter = { .v = packed };
+    return static_cast<uint64_t>(converter.u32[0]);
 #elif defined(__3dNOW__)
     // 3DNow! implementation for AMD Athlon processors
-    __m64 x = *reinterpret_cast<const __m64*>(p);
-    __m64 result = _m_packuswb(x, x);  // Pack with 3DNow! instruction
-    uint64_t ret = *reinterpret_cast<uint64_t*>(&result);
+    // Since _m_packuswb isn't always available, we'll use a manual approach
+    uint64_t result = 0;
+    for (int i = 0; i < 4; ++i) {
+        result |= (static_cast<uint64_t>(p[i]) & 0xFF) << (i * 8);
+    }
     _m_empty();  // Clean up 3DNow! state
-    return ret;
+    return result;
 #elif defined(__SSE2__)
     // Load 16-bit values and pack them to 8-bit values
     // Only pack first 4 16-bit values to get 4 8-bit values
@@ -93,9 +106,11 @@ struct ConvertTo8BitHashReader {
     x = _mm_insert_epi16(x, p[2], 2);
     x = _mm_insert_epi16(x, p[3], 3);
     __m128i packed = _mm_packus_epi16(x, x);
-#ifdef _M_IX86  // 32-bit x86 - use alternative method
-    // Use _mm_cvtsi128_si32 to get the lower 32 bits and cast to uint64_t
+#ifdef V8_TARGET_ARCH_32_BIT
+    // On 32-bit systems, use the safe method
     return static_cast<uint64_t>(_mm_cvtsi128_si32(packed));
+#elif defined(__x86_64__) || defined(_M_X64)
+    return static_cast<uint64_t>(_mm_cvtsi128_si64(packed));
 #else
     return static_cast<uint64_t>(_mm_cvtsi128_si32(packed));
 #endif
