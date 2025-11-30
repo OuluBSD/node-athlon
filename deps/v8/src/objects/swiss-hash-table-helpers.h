@@ -239,15 +239,15 @@ struct GroupAltivecImpl {
 
   // Returns a bitmask representing the positions of slots that match |hash|.
   BitMask<uint32_t, kWidth> Match(h2_t hash) const {
-    vector signed char match_vec = vec_splats((signed char)hash);
-    vector unsigned char ctrl_vec = (vector unsigned char)ctrl;
-    vector unsigned char match_result = (vector unsigned char)vec_cmpeq(match_vec, ctrl_vec);
+    __vector signed char match_vec = vec_splats((signed char)hash);
+    __vector unsigned char ctrl_vec = (__vector unsigned char)ctrl;
+    __vector unsigned char match_result = (__vector unsigned char)vec_cmpeq(match_vec, ctrl_vec);
     // Convert the result to a bitmask
     unsigned int mask = 0;
     // Extract each byte and create the mask
     for (int i = 0; i < 16; i++) {
       unsigned char byte_val;
-      vec_ste((vector signed char)match_result, i, (signed char*)&byte_val);
+      vec_ste((__vector signed char)match_result, i, (signed char*)&byte_val);
       if (byte_val != 0) {
         mask |= (1u << i);
       }
@@ -260,7 +260,7 @@ struct GroupAltivecImpl {
     return Match(static_cast<h2_t>(kEmpty));
   }
 
-  vector signed char ctrl;
+  __vector signed char ctrl;
 };
 #elif defined(__3dNOW__)
 struct Group3dNowImpl {

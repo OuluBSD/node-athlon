@@ -67,7 +67,7 @@ export CXX="g++ -march=native"
 export CPP="cpp -march=native"
 
 # Build configure command based on npm option
-CONFIGURE_CMD=("/usr/bin/env python3" "./configure")
+CONFIGURE_CMD=("/usr/bin/env" "python3" "./configure")
 CONFIGURE_CMD+=("--dest-cpu=x64")
 CONFIGURE_CMD+=("--dest-os=linux")
 CONFIGURE_CMD+=("--without-intl")
@@ -82,6 +82,7 @@ else
 fi
 
 # Execute configure command
+echo "${CONFIGURE_CMD[@]}"
 "${CONFIGURE_CMD[@]}"
 
 # Build with specified parallelism
