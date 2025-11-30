@@ -13,6 +13,7 @@ echo "Setting up Node.js build for 64-bit PowerPC with AltiVec support..."
 # Parse command line arguments
 CLEAN=false
 JOBS=1
+WITH_NPM=true
 SHOW_HELP=false
 
 for arg in "$@"; do
@@ -28,6 +29,9 @@ for arg in "$@"; do
         exit 1
       fi
       ;;
+    --without-npm)
+      WITH_NPM=false
+      ;;
     --help|-h)
       SHOW_HELP=true
       ;;
@@ -40,9 +44,10 @@ done
 if [ "$SHOW_HELP" = true ]; then
   echo "Usage: $0 [OPTIONS]"
   echo "Options:"
-  echo "  --clean    Clean previous build before starting"
-  echo "  -jN        Run N build jobs in parallel (default: 1)"
-  echo "  --help, -h Show this help message"
+  echo "  --clean       Clean previous build before starting"
+  echo "  -jN           Run N build jobs in parallel (default: 1)"
+  echo "  --without-npm  Build without npm (default: npm is included)"
+  echo "  --help, -h    Show this help message"
   echo ""
   echo "Builds Node.js with AltiVec support for PowerPC 64-bit systems (e.g., Power Mac G5)."
   exit 0
@@ -73,21 +78,30 @@ export GYP_DEFINES="target_arch=ppc64 v8_target_arch=ppc64"
 export GYP_CROSSCOMPILE=1
 
 # Apply endianness correction flags specifically for OpenSSL and other affected libraries
-# This approach targets the specific issue without interfering with other PowerPC code like V8
-export CFLAGS="$CFLAGS -DB_ENDIAN -UL_ENDIAN"
-export CXXFLAGS="$CXXFLAGS -DB_ENDIAN -UL_ENDIAN"
-export CPPFLAGS="$CPPFLAGS -DB_ENDIAN -UL_ENDIAN"
+# Also force V8 to use portable implementation instead of buggy Altivec implementation
+export CFLAGS="$CFLAGS -DB_ENDIAN -UL_ENDIAN -DV8_SWISS_TABLE_HAVE_SSE2_TARGET=1"
+export CXXFLAGS="$CXXFLAGS -DB_ENDIAN -UL_ENDIAN -DV8_SWISS_TABLE_HAVE_SSE2_TARGET=1"
+export CPPFLAGS="$CPPFLAGS -DB_ENDIAN -UL_ENDIAN -DV8_SWISS_TABLE_HAVE_SSE2_TARGET=1"
 
-echo "Configuring build with AltiVec support..."
-/usr/bin/env python3 ./configure \
-  --dest-cpu=ppc64 \
-  --dest-os=linux \
-  --without-intl \
-  --without-inspector \
-  --without-npm \
-  --without-node-snapshot \
-  --with-simd-support=altivec \
-  --openssl-no-asm
+# Build configure command based on npm option
+CONFIGURE_CMD=("/usr/bin/env python3" "./configure")
+CONFIGURE_CMD+=("--dest-cpu=ppc64")
+CONFIGURE_CMD+=("--dest-os=linux")
+CONFIGURE_CMD+=("--without-intl")
+CONFIGURE_CMD+=("--without-inspector")
+CONFIGURE_CMD+=("--without-node-snapshot")
+CONFIGURE_CMD+=("--with-simd-support=altivec")
+CONFIGURE_CMD+=("--openssl-no-asm")
+
+if [ "$WITH_NPM" = false ]; then
+  CONFIGURE_CMD+=("--without-npm")
+  echo "Configuring build with AltiVec support (without npm)..."
+else
+  echo "Configuring build with AltiVec support (with npm)..."
+fi
+
+# Execute configure command
+"${CONFIGURE_CMD[@]}"
 
 # Build with specified parallelism
 echo "Starting build with AltiVec support (using $JOBS parallel job(s))..."
@@ -100,6 +114,11 @@ echo "To verify the resulting executable:"
 echo "ls -la out/Release/"
 echo ""
 echo "Note: The resulting executable should be compatible with PowerPC 64-bit systems with AltiVec support (e.g., Power Mac G5)."
+if [ "$WITH_NPM" = true ]; then
+  echo "npm is included in the build."
+else
+  echo "npm is not included in the build."
+fi
 
 # Clean up temporary header file
 rm -f /tmp/ppc64_endian_fix.h

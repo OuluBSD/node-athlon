@@ -10,7 +10,7 @@
   devTools ? import ./tools/nix/devTools.nix { inherit pkgs ncu-path; },
   benchmarkTools ? import ./tools/nix/benchmarkTools.nix { inherit pkgs; },
   extraConfigFlags ? [
-    "--without-npm"
+    # NOTE: npm is included by default, use --without-npm to exclude it
     "--debug-node"
   ]
   ++ pkgs.lib.optionals withTemporal [

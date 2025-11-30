@@ -10,6 +10,7 @@ echo "Setting up Node.js build for 32-bit x86 with 3DNow support..."
 # Parse command line arguments
 CLEAN=false
 JOBS=1
+WITH_NPM=true
 SHOW_HELP=false
 
 for arg in "$@"; do
@@ -25,6 +26,9 @@ for arg in "$@"; do
         exit 1
       fi
       ;;
+    --without-npm)
+      WITH_NPM=false
+      ;;
     --help|-h)
       SHOW_HELP=true
       ;;
@@ -37,9 +41,10 @@ done
 if [ "$SHOW_HELP" = true ]; then
   echo "Usage: $0 [OPTIONS]"
   echo "Options:"
-  echo "  --clean    Clean previous build before starting"
-  echo "  -jN        Run N build jobs in parallel (default: 1)"
-  echo "  --help, -h Show this help message"
+  echo "  --clean       Clean previous build before starting"
+  echo "  -jN           Run N build jobs in parallel (default: 1)"
+  echo "  --without-npm  Build without npm (default: npm is included)"
+  echo "  --help, -h    Show this help message"
   echo ""
   echo "Builds Node.js with 3DNow support for AMD Athlon processors."
   exit 0
@@ -61,15 +66,24 @@ export CC="gcc -m32 -march=athlon -mno-sse -mno-sse2 -m3dnow -m3dnowa"
 export CXX="g++ -m32 -march=athlon -mno-sse -mno-sse2 -m3dnow -m3dnowa"
 export CPP="cpp -m32 -march=athlon -mno-sse -mno-sse2 -m3dnow -m3dnowa"
 
-echo "Configuring build with 3DNow support..."
-/usr/bin/env python3 ./configure \
-  --dest-cpu=ia32 \
-  --dest-os=linux \
-  --without-intl \
-  --without-inspector \
-  --without-npm \
-  --without-node-snapshot \
-  --with-simd-support=3dnow
+# Build configure command based on npm option
+CONFIGURE_CMD=("/usr/bin/env python3" "./configure")
+CONFIGURE_CMD+=("--dest-cpu=ia32")
+CONFIGURE_CMD+=("--dest-os=linux")
+CONFIGURE_CMD+=("--without-intl")
+CONFIGURE_CMD+=("--without-inspector")
+CONFIGURE_CMD+=("--without-node-snapshot")
+CONFIGURE_CMD+=("--with-simd-support=3dnow")
+
+if [ "$WITH_NPM" = false ]; then
+  CONFIGURE_CMD+=("--without-npm")
+  echo "Configuring build with 3DNow support (without npm)..."
+else
+  echo "Configuring build with 3DNow support (with npm)..."
+fi
+
+# Execute configure command
+"${CONFIGURE_CMD[@]}"
 
 # Build with specified parallelism
 echo "Starting build with 3DNow support (using $JOBS parallel job(s))..."
@@ -82,3 +96,8 @@ echo "To verify the resulting executable:"
 echo "ls -la out/Release/"
 echo ""
 echo "Note: The resulting executable should be compatible with AMD Athlon processors with 3DNow support."
+if [ "$WITH_NPM" = true ]; then
+  echo "npm is included in the build."
+else
+  echo "npm is not included in the build."
+fi

@@ -10,6 +10,7 @@ echo "Setting up Node.js build with native architecture optimizations..."
 # Parse command line arguments
 CLEAN=false
 JOBS=1
+WITH_NPM=true
 SHOW_HELP=false
 
 for arg in "$@"; do
@@ -25,6 +26,9 @@ for arg in "$@"; do
         exit 1
       fi
       ;;
+    --without-npm)
+      WITH_NPM=false
+      ;;
     --help|-h)
       SHOW_HELP=true
       ;;
@@ -37,9 +41,10 @@ done
 if [ "$SHOW_HELP" = true ]; then
   echo "Usage: $0 [OPTIONS]"
   echo "Options:"
-  echo "  --clean    Clean previous build before starting"
-  echo "  -jN        Run N build jobs in parallel (default: 1)"
-  echo "  --help, -h Show this help message"
+  echo "  --clean       Clean previous build before starting"
+  echo "  -jN           Run N build jobs in parallel (default: 1)"
+  echo "  --without-npm  Build without npm (default: npm is included)"
+  echo "  --help, -h    Show this help message"
   echo ""
   echo "Builds Node.js using native architecture optimizations for the host system."
   exit 0
@@ -61,14 +66,23 @@ export CC="gcc -march=native"
 export CXX="g++ -march=native"
 export CPP="cpp -march=native"
 
-echo "Configuring build with native architecture optimizations..."
-/usr/bin/env python3 ./configure \
-  --dest-cpu=x64 \
-  --dest-os=linux \
-  --without-intl \
-  --without-inspector \
-  --without-npm \
-  --without-node-snapshot
+# Build configure command based on npm option
+CONFIGURE_CMD=("/usr/bin/env python3" "./configure")
+CONFIGURE_CMD+=("--dest-cpu=x64")
+CONFIGURE_CMD+=("--dest-os=linux")
+CONFIGURE_CMD+=("--without-intl")
+CONFIGURE_CMD+=("--without-inspector")
+CONFIGURE_CMD+=("--without-node-snapshot")
+
+if [ "$WITH_NPM" = false ]; then
+  CONFIGURE_CMD+=("--without-npm")
+  echo "Configuring build with native architecture optimizations (without npm)..."
+else
+  echo "Configuring build with native architecture optimizations (with npm)..."
+fi
+
+# Execute configure command
+"${CONFIGURE_CMD[@]}"
 
 # Build with specified parallelism
 echo "Starting build with native optimizations (using $JOBS parallel job(s))..."
@@ -81,3 +95,8 @@ echo "To verify the resulting executable:"
 echo "ls -la out/Release/"
 echo ""
 echo "Note: The resulting executable is optimized for the host system architecture."
+if [ "$WITH_NPM" = true ]; then
+  echo "npm is included in the build."
+else
+  echo "npm is not included in the build."
+fi
