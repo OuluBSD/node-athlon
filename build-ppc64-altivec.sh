@@ -82,6 +82,7 @@ export CFLAGS="$CFLAGS -DB_ENDIAN -UL_ENDIAN"
 export CXXFLAGS="$CXXFLAGS -DB_ENDIAN -UL_ENDIAN"
 export CPPFLAGS="$CPPFLAGS -DB_ENDIAN -UL_ENDIAN"
 export LDFLAGS="$LDFLAGS -m64 -mminimal-toc"
+export ARFLAGS="rcs"
 
 # Build configure command based on npm option
 CONFIGURE_CMD=("/usr/bin/env" "python3" "./configure")
