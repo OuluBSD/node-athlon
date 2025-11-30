@@ -78,10 +78,9 @@ export GYP_DEFINES="target_arch=ppc64 v8_target_arch=ppc64"
 export GYP_CROSSCOMPILE=1
 
 # Apply endianness correction flags specifically for OpenSSL and other affected libraries
-# Also force V8 to use portable implementation instead of buggy Altivec implementation
-export CFLAGS="$CFLAGS -DB_ENDIAN -UL_ENDIAN -DV8_SWISS_TABLE_HAVE_SSE2_TARGET=1"
-export CXXFLAGS="$CXXFLAGS -DB_ENDIAN -UL_ENDIAN -DV8_SWISS_TABLE_HAVE_SSE2_TARGET=1"
-export CPPFLAGS="$CPPFLAGS -DB_ENDIAN -UL_ENDIAN -DV8_SWISS_TABLE_HAVE_SSE2_TARGET=1"
+export CFLAGS="$CFLAGS -DB_ENDIAN -UL_ENDIAN"
+export CXXFLAGS="$CXXFLAGS -DB_ENDIAN -UL_ENDIAN"
+export CPPFLAGS="$CPPFLAGS -DB_ENDIAN -UL_ENDIAN"
 
 # Build configure command based on npm option
 CONFIGURE_CMD=("/usr/bin/env" "python3" "./configure")
