@@ -240,7 +240,7 @@ struct GroupAltivecImpl {
   // Returns a bitmask representing the positions of slots that match |hash|.
   BitMask<uint32_t, kWidth> Match(h2_t hash) const {
     __vector signed char match_vec = vec_splats((signed char)hash);
-    __vector unsigned char ctrl_vec = (__vector unsigned char)ctrl;
+    __vector signed char ctrl_vec = (__vector signed char)ctrl;
     __vector unsigned char match_result = (__vector unsigned char)vec_cmpeq(match_vec, ctrl_vec);
     // Convert the result to a bitmask
     unsigned int mask = 0;
