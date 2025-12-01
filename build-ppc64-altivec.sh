@@ -82,12 +82,22 @@ export CPP="cpp -m64 -mcpu=G5 -mtune=G5 -maltivec -mabi=altivec -DSIMDUTF_NO_VSX
 export GYP_DEFINES="target_arch=ppc64 v8_target_arch=ppc64"
 export GYP_CROSSCOMPILE=1
 
+# Additional variables for GYP build system to ensure PowerPC64 compatibility
+export GYP_DEFINES="$GYP_DEFINES host_arch=ppc64"
+
+# Also pass linker and archiver flags to GYP build system
+export GYP_LDFLAGS="'-m64' '-mminimal-toc'"
+export GYP_ARFLAGS="rcs"
+
 # Apply endianness correction flags specifically for OpenSSL and other affected libraries
 export CFLAGS="$CFLAGS -DB_ENDIAN -UL_ENDIAN"
 export CXXFLAGS="$CXXFLAGS -DB_ENDIAN -UL_ENDIAN"
 export CPPFLAGS="$CPPFLAGS -DB_ENDIAN -UL_ENDIAN"
 export LDFLAGS="$LDFLAGS -m64 -mminimal-toc"
 export ARFLAGS="rcs"
+
+# Additional variables for GYP build system to ensure PowerPC64 compatibility
+export GYP_CROSSCOMPILE=1
 
 # Build configure command based on npm and intl options
 CONFIGURE_CMD=("/usr/bin/env" "python3" "./configure")
