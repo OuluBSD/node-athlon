@@ -25,13 +25,13 @@ struct ConvertTo8BitHashReader {
     DCHECK_LE(p[7], 0xff);
 #ifdef __ALTIVEC__
     // Altivec implementation for PowerPC systems (like G5)
-    vector unsigned short x = vec_ld(0, p);
-    vector unsigned short y = vec_ld(8, p); // Load second set of 16-bit values
-    vector unsigned char packed = vec_pack(x, y);
+    __vector unsigned short x = vec_ld(0, p);
+    __vector unsigned short y = vec_ld(8, p); // Load second set of 16-bit values
+    __vector unsigned char packed = vec_pack(x, y);
     // Extract 64-bit result from the packed vector
     uint64_t result;
     // Use vec_extract to get the lower 64 bits properly
-    union { vector unsigned char v; uint64_t u64[2]; } converter = { .v = packed };
+    union { __vector unsigned char v; uint64_t u64[2]; } converter = { .v = packed };
     result = converter.u64[0];
     return result;
 #elif defined(__3dNOW__)
@@ -82,11 +82,11 @@ struct ConvertTo8BitHashReader {
     DCHECK_LE(p[3], 0xff);
 #ifdef __ALTIVEC__
     // Altivec implementation for PowerPC systems (like G5)
-    vector unsigned short x = vec_ld(0, p);
-    vector unsigned short y = vec_splat_s16(0); // Zero vector for packing
-    vector unsigned char packed = vec_pack(x, y);
+    __vector unsigned short x = vec_ld(0, p);
+    __vector unsigned short y = vec_splat_s16(0); // Zero vector for packing
+    __vector unsigned char packed = vec_pack(x, y);
     // Extract 32-bit result from the packed vector (as low 32 bits)
-    union { vector unsigned char v; uint32_t u32[4]; } converter = { .v = packed };
+    union { __vector unsigned char v; uint32_t u32[4]; } converter = { .v = packed };
     return static_cast<uint64_t>(converter.u32[0]);
 #elif defined(__3dNOW__)
     // 3DNow! implementation for AMD Athlon processors
