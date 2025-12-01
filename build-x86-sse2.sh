@@ -11,6 +11,7 @@ echo "Setting up Node.js build for 32-bit x86 with SSE2 support..."
 CLEAN=false
 JOBS=1
 WITH_NPM=true
+WITH_INTL=true
 SHOW_HELP=false
 
 for arg in "$@"; do
@@ -29,6 +30,9 @@ for arg in "$@"; do
     --without-npm)
       WITH_NPM=false
       ;;
+    --without-intl)
+      WITH_INTL=false
+      ;;
     --help|-h)
       SHOW_HELP=true
       ;;
@@ -44,6 +48,7 @@ if [ "$SHOW_HELP" = true ]; then
   echo "  --clean       Clean previous build before starting"
   echo "  -jN           Run N build jobs in parallel (default: 1)"
   echo "  --without-npm  Build without npm (default: npm is included)"
+  echo "  --without-intl Build without internationalization (default: intl is included)"
   echo "  --help, -h    Show this help message"
   echo ""
   echo "Builds Node.js with SSE2 support for x86 systems."
@@ -66,11 +71,10 @@ export CC="gcc -m32 -march=pentium4 -msse2 -mfpmath=sse -mmmx"
 export CXX="g++ -m32 -march=pentium4 -msse2 -mfpmath=sse -mmmx"
 export CPP="cpp -m32 -march=pentium4 -msse2 -mfpmath=sse -mmmx"
 
-# Build configure command based on npm option
+# Build configure command based on npm and intl options
 CONFIGURE_CMD=("/usr/bin/env" "python3" "./configure")
 CONFIGURE_CMD+=("--dest-cpu=ia32")
 CONFIGURE_CMD+=("--dest-os=linux")
-CONFIGURE_CMD+=("--without-intl")
 CONFIGURE_CMD+=("--without-inspector")
 CONFIGURE_CMD+=("--without-node-snapshot")
 CONFIGURE_CMD+=("--with-simd-support=sse2")
@@ -80,6 +84,13 @@ if [ "$WITH_NPM" = false ]; then
   echo "Configuring build with SSE2 support (without npm)..."
 else
   echo "Configuring build with SSE2 support (with npm)..."
+fi
+
+if [ "$WITH_INTL" = false ]; then
+  CONFIGURE_CMD+=("--without-intl")
+  echo "Configuring build with SSE2 support (without internationalization)..."
+else
+  echo "Configuring build with SSE2 support (with internationalization)..."
 fi
 
 # Execute configure command
