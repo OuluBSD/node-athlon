@@ -98,7 +98,7 @@ export LDFLAGS="$LDFLAGS -m64 -mminimal-toc"
 
 # Configure build to skip problematic memory optimization passes on PowerPC64
 # This can be done by setting specific V8 flags during the build
-export GYP_DEFINES="$GYP_DEFINES v8_enable_verify_write_barriers=0"
+export GYP_DEFINES="$GYP_DEFINES v8_enable_verify_write_barriers=0 v8_enable_slow_dcheck=0 v8_optimized_debugging=0"
 
 export ARFLAGS="rcs"
 
@@ -113,6 +113,8 @@ CONFIGURE_CMD+=("--without-inspector")
 CONFIGURE_CMD+=("--without-node-snapshot")
 CONFIGURE_CMD+=("--with-simd-support=altivec")
 CONFIGURE_CMD+=("--openssl-no-asm")
+# Use default snapshot to avoid mksnapshot generation on problematic PowerPC64 architecture
+CONFIGURE_CMD+=("--shared-openssl")
 
 if [ "$WITH_NPM" = false ]; then
   CONFIGURE_CMD+=("--without-npm")
