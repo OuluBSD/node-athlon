@@ -91,8 +91,9 @@ export GYP_LDFLAGS="'-m64' '-mminimal-toc'"
 export GYP_ARFLAGS="rcs"
 
 # Apply endianness correction flags specifically for OpenSSL and other affected libraries
-export CFLAGS="$CFLAGS -DB_ENDIAN -UL_ENDIAN"
-export CXXFLAGS="$CXXFLAGS -DB_ENDIAN -UL_ENDIAN"
+# Also reduce optimization levels to avoid problematic code generation on PowerPC64
+export CFLAGS="$CFLAGS -DB_ENDIAN -UL_ENDIAN -O1"
+export CXXFLAGS="$CXXFLAGS -DB_ENDIAN -UL_ENDIAN -O1"
 export CPPFLAGS="$CPPFLAGS -DB_ENDIAN -UL_ENDIAN"
 export LDFLAGS="$LDFLAGS -m64 -mminimal-toc"
 
