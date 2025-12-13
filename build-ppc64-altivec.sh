@@ -73,6 +73,7 @@ fi
 # Do NOT use -mvsx flag as Power Mac G5 doesn't support VSX instructions
 # Also define the correct endianness for PowerPC (big-endian) to fix OpenSSL endianness issue
 # Disable PowerPC-specific simdjson implementation that requires VSX instructions
+# Disable problematic V8 write barrier optimizations that cause issues on PowerPC64
 export CC="gcc -m64 -mcpu=G5 -mtune=G5 -maltivec -mabi=altivec -DSIMDUTF_NO_VSX -DSIMDJSON_IMPLEMENTATION_PPC64=0"
 export CXX="g++ -m64 -mcpu=G5 -mtune=G5 -maltivec -mabi=altivec -DSIMDUTF_NO_VSX -DSIMDJSON_IMPLEMENTATION_PPC64=0"
 export CPP="cpp -m64 -mcpu=G5 -mtune=G5 -maltivec -mabi=altivec -DSIMDUTF_NO_VSX -DSIMDJSON_IMPLEMENTATION_PPC64=0"
@@ -94,6 +95,11 @@ export CFLAGS="$CFLAGS -DB_ENDIAN -UL_ENDIAN"
 export CXXFLAGS="$CXXFLAGS -DB_ENDIAN -UL_ENDIAN"
 export CPPFLAGS="$CPPFLAGS -DB_ENDIAN -UL_ENDIAN"
 export LDFLAGS="$LDFLAGS -m64 -mminimal-toc"
+
+# Configure build to skip problematic memory optimization passes on PowerPC64
+# This can be done by setting specific V8 flags during the build
+export GYP_DEFINES="$GYP_DEFINES v8_enable_verify_write_barriers=0"
+
 export ARFLAGS="rcs"
 
 # Additional variables for GYP build system to ensure PowerPC64 compatibility

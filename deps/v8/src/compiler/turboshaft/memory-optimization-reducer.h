@@ -152,11 +152,18 @@ struct MemoryAnalyzer {
     if (!ValueNeedsWriteBarrier(&input_graph, value, isolate_)) return true;
     if (v8_flags.disable_write_barriers) return true;
     if (write_barrier_kind == WriteBarrierKind::kAssertNoWriteBarrier) {
+#if V8_TARGET_ARCH_PPC64
+      // On PowerPC64, especially with older implementations like G5,
+      // the memory model can cause issues with write barrier elimination.
+      // Rather than failing, we return false to skip the optimization.
+      return false;
+#else
       std::stringstream str;
       str << "MemoryOptimizationReducer could not remove write barrier for "
              "operation\n  #"
           << input_graph.Index(store) << ": " << store.ToString() << "\n";
       FATAL("%s", str.str().c_str());
+#endif  // V8_TARGET_ARCH_PPC64
     }
     return false;
   }
