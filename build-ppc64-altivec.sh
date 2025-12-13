@@ -113,8 +113,6 @@ CONFIGURE_CMD+=("--without-inspector")
 CONFIGURE_CMD+=("--without-node-snapshot")
 CONFIGURE_CMD+=("--with-simd-support=altivec")
 CONFIGURE_CMD+=("--openssl-no-asm")
-# Use default snapshot to avoid mksnapshot generation on problematic PowerPC64 architecture
-CONFIGURE_CMD+=("--shared-openssl")
 
 if [ "$WITH_NPM" = false ]; then
   CONFIGURE_CMD+=("--without-npm")
