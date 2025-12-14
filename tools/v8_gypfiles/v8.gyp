@@ -1840,6 +1840,11 @@
         ['enable_lto=="true"', {
           'ldflags': [ '-fno-lto' ],
         }],
+        # Use reduced optimization on PowerPC64 to avoid unreachable code errors in mksnapshot
+        ['"<!(echo %PROCESSOR_ARCHITECTURE%)"=="ppc64" or target_arch=="ppc64"', {
+          'cflags': [ '-O1' ],
+          'cflags_cc': [ '-O1' ],
+        }],
       ],
     },  # mksnapshot
     {

@@ -96,11 +96,6 @@ export CXXFLAGS="$CXXFLAGS -DB_ENDIAN -UL_ENDIAN"
 export CPPFLAGS="$CPPFLAGS -DB_ENDIAN -UL_ENDIAN"
 export LDFLAGS="$LDFLAGS -m64 -mminimal-toc"
 
-# Reduce optimization levels to avoid problematic code generation on PowerPC64
-# This should override any higher optimization flags that may be set elsewhere
-export CFLAGS="$CFLAGS -O1"
-export CXXFLAGS="$CXXFLAGS -O1"
-
 # Configure build to skip problematic memory optimization passes on PowerPC64
 # This can be done by setting specific V8 flags during the build
 export GYP_DEFINES="$GYP_DEFINES v8_enable_verify_write_barriers=0 v8_enable_slow_dcheck=0 v8_optimized_debugging=0"
