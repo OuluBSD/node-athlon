@@ -994,6 +994,7 @@
         'v8_maybe_icu',
         'v8_base_without_compiler',
         'v8_libbase',
+        'v8_libplatform',
         'v8_shared_internal_headers',
         'v8_pch',
         'fp16',
@@ -1009,6 +1010,11 @@
           'dependencies': ['v8_compiler_sources'],
         }, {
           'sources': ['<(V8_ROOT)/src/compiler/turbofan-disabled.cc'],
+        }],
+        # Use reduced optimization on PowerPC64 to avoid unreachable code errors in mksnapshot
+        ['"<!(echo %PROCESSOR_ARCHITECTURE%)"=="ppc64" or target_arch=="ppc64"', {
+          'cflags': [ '-O2' ],  # Changed from -O3 to -O2 to avoid PowerPC64 issues
+          'cflags_cc': [ '-O2' ],
         }],
       ],
     },  # v8_compiler
