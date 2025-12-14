@@ -91,11 +91,15 @@ export GYP_LDFLAGS="'-m64' '-mminimal-toc'"
 export GYP_ARFLAGS="rcs"
 
 # Apply endianness correction flags specifically for OpenSSL and other affected libraries
-# Also reduce optimization levels to avoid problematic code generation on PowerPC64
-export CFLAGS="$CFLAGS -DB_ENDIAN -UL_ENDIAN -O1"
-export CXXFLAGS="$CXXFLAGS -DB_ENDIAN -UL_ENDIAN -O1"
+export CFLAGS="$CFLAGS -DB_ENDIAN -UL_ENDIAN"
+export CXXFLAGS="$CXXFLAGS -DB_ENDIAN -UL_ENDIAN"
 export CPPFLAGS="$CPPFLAGS -DB_ENDIAN -UL_ENDIAN"
 export LDFLAGS="$LDFLAGS -m64 -mminimal-toc"
+
+# Reduce optimization levels to avoid problematic code generation on PowerPC64
+# This should override any higher optimization flags that may be set elsewhere
+export CFLAGS="$CFLAGS -O1"
+export CXXFLAGS="$CXXFLAGS -O1"
 
 # Configure build to skip problematic memory optimization passes on PowerPC64
 # This can be done by setting specific V8 flags during the build
