@@ -111,6 +111,11 @@ export CXXFLAGS="$CXXFLAGS -O1"
 # This can be done by setting specific V8 flags during the build
 export GYP_DEFINES="$GYP_DEFINES v8_enable_verify_write_barriers=0 v8_enable_slow_dcheck=0 v8_optimized_debugging=0"
 
+# To fix the simdutf PowerPC inlining issue specifically, disable the PowerPC implementation
+export CFLAGS="$CFLAGS -DSIMDUTF_IMPLEMENTATION_PPC64=0"
+export CXXFLAGS="$CXXFLAGS -DSIMDUTF_IMPLEMENTATION_PPC64=0"
+export CPPFLAGS="$CPPFLAGS -DSIMDUTF_IMPLEMENTATION_PPC64=0"
+
 export ARFLAGS="rcs"
 
 # Additional variables for GYP build system to ensure PowerPC64 compatibility
