@@ -72,11 +72,17 @@ fi
 # Set environment variables to use 64-bit PowerPC compilation with AltiVec support
 # Do NOT use -mvsx flag as Power Mac G5 doesn't support VSX instructions
 # Also define the correct endianness for PowerPC (big-endian) to fix OpenSSL endianness issue
-# Disable PowerPC-specific simdjson implementation that requires VSX instructions
+# Disable PowerPC-specific implementations that cause compilation issues on G5
 # Disable problematic V8 write barrier optimizations that cause issues on PowerPC64
-export CC="gcc -m64 -mcpu=G5 -mtune=G5 -maltivec -mabi=altivec -DSIMDUTF_NO_VSX -DSIMDJSON_IMPLEMENTATION_PPC64=0"
-export CXX="g++ -m64 -mcpu=G5 -mtune=G5 -maltivec -mabi=altivec -DSIMDUTF_NO_VSX -DSIMDJSON_IMPLEMENTATION_PPC64=0"
-export CPP="cpp -m64 -mcpu=G5 -mtune=G5 -maltivec -mabi=altivec -DSIMDUTF_NO_VSX -DSIMDJSON_IMPLEMENTATION_PPC64=0"
+# For cross-compilation, we might need different flags that are supported by the host compiler
+export CC="gcc -m64 -mcpu=G5 -mtune=G5 -maltivec -mabi=altivec -DSIMDUTF_NO_VSX -DSIMDJSON_IMPLEMENTATION_PPC64=0 -DSIMDUTF_IMPLEMENTATION_PPC64=0"
+export CXX="g++ -m64 -mcpu=G5 -mtune=G5 -maltivec -mabi=altivec -DSIMDUTF_NO_VSX -DSIMDJSON_IMPLEMENTATION_PPC64=0 -DSIMDUTF_IMPLEMENTATION_PPC64=0"
+export CPP="cpp -m64 -mcpu=G5 -mtune=G5 -maltivec -mabi=altivec -DSIMDUTF_NO_VSX -DSIMDJSON_IMPLEMENTATION_PPC64=0 -DSIMDUTF_IMPLEMENTATION_PPC64=0"
+
+# If the above flags cause errors (e.g., "unrecognized argument in option '-mabi=altivec'"),
+# try using cross-compilation toolchain instead:
+# export CC="powerpc64-linux-gnu-gcc -m64 -mcpu=G5 -mtune=G5 -maltivec"
+# export CXX="powerpc64-linux-gnu-g++ -m64 -mcpu=G5 -mtune=G5 -maltivec"
 
 # Additionally set the architecture for GYP to ensure correct OpenSSL config is used
 # Include endianness information to help Node.js build system make correct decisions
