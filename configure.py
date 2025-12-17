@@ -116,9 +116,9 @@ parser.add_argument('--dest-cpu',
 parser.add_argument('--with-simd-support',
     action='store',
     dest='simd_support',
-    choices=['sse2', '3dnow', 'altivec', 'auto', 'none'],
+    choices=['sse2', '3dnow', 'altivec', 'neon', 'auto', 'none'],
     default='auto',
-    help="SIMD instruction set support to enable (sse2, 3dnow, altivec, auto, none) [default: %(default)s]")
+    help="SIMD instruction set support to enable (sse2, 3dnow, altivec, neon, auto, none) [default: %(default)s]")
 
 parser.add_argument('--cross-compiling',
     action='store_true',
@@ -1600,6 +1600,8 @@ def configure_node(o):
       simd_support = 'sse2'  # Default to SSE2 for x86/x64 unless 3DNow! is preferred
     elif target_arch in ['ppc64', 'ppc']:
       simd_support = 'altivec'
+    elif target_arch in ['arm', 'arm64']:
+      simd_support = 'neon'
     else:
       simd_support = 'none'  # Default to none for other architectures
 
@@ -1608,22 +1610,32 @@ def configure_node(o):
     o['variables']['node_enable_sse2'] = 'true'
     o['variables']['node_enable_3dnow'] = 'false'
     o['variables']['node_enable_altivec'] = 'false'
+    o['variables']['node_enable_neon'] = 'false'
   elif simd_support == '3dnow':
     o['variables']['node_enable_sse2'] = 'false'
     o['variables']['node_enable_3dnow'] = 'true'
     o['variables']['node_enable_altivec'] = 'false'
+    o['variables']['node_enable_neon'] = 'false'
   elif simd_support == 'altivec':
     o['variables']['node_enable_sse2'] = 'false'
     o['variables']['node_enable_3dnow'] = 'false'
     o['variables']['node_enable_altivec'] = 'true'
+    o['variables']['node_enable_neon'] = 'false'
+  elif simd_support == 'neon':
+    o['variables']['node_enable_sse2'] = 'false'
+    o['variables']['node_enable_3dnow'] = 'false'
+    o['variables']['node_enable_altivec'] = 'false'
+    o['variables']['node_enable_neon'] = 'true'
   elif simd_support == 'none':
     o['variables']['node_enable_sse2'] = 'false'
     o['variables']['node_enable_3dnow'] = 'false'
     o['variables']['node_enable_altivec'] = 'false'
+    o['variables']['node_enable_neon'] = 'false'
   else:
     o['variables']['node_enable_sse2'] = 'false'
     o['variables']['node_enable_3dnow'] = 'false'
     o['variables']['node_enable_altivec'] = 'false'
+    o['variables']['node_enable_neon'] = 'false'
 
   o['variables']['node_simd_support'] = simd_support
 

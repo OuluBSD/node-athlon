@@ -2,7 +2,7 @@
 #define SIMD_ABSTRACTION_H
 
 #include "zlib.h"
-#include "cpu_features.h"
+#include "../deps/zlib/cpu_features.h"
 
 /*
  * SIMD Abstraction Layer
@@ -31,6 +31,15 @@
         #define SIMD_INSTRUCTION_SET SIMD_SCALAR
         #define USE_SCALAR 1
     #endif
+#elif defined(__arm__) || defined(__aarch64__)
+    /* ARM platform - check for NEON */
+    #if defined(__ARM_NEON) && arm_cpu_enable_neon
+        #define SIMD_INSTRUCTION_SET SIMD_NEON
+        #define USE_NEON 1
+    #else
+        #define SIMD_INSTRUCTION_SET SIMD_SCALAR
+        #define USE_SCALAR 1
+    #endif
 #else
     /* Other platforms - use scalar fallback */
     #define SIMD_INSTRUCTION_SET SIMD_SCALAR
@@ -43,7 +52,8 @@ typedef enum {
     SIMD_SCALAR = 1,
     SIMD_SSE2 = 2,
     SIMD_3DNOW = 3,
-    SIMD_ALTIVEC = 4
+    SIMD_ALTIVEC = 4,
+    SIMD_NEON = 5
 } simd_instruction_set_t;
 
 /* SIMD function declarations */

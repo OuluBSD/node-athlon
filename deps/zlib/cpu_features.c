@@ -27,6 +27,7 @@ int ZLIB_INTERNAL arm_cpu_enable_pmull = 1;
 #else
 int ZLIB_INTERNAL arm_cpu_enable_crc32 = 0;
 int ZLIB_INTERNAL arm_cpu_enable_pmull = 0;
+int ZLIB_INTERNAL arm_cpu_enable_neon = 0;     /* ARM NEON support */
 #endif
 int ZLIB_INTERNAL x86_cpu_enable_sse2 = 0;
 int ZLIB_INTERNAL x86_cpu_enable_ssse3 = 0;
@@ -112,19 +113,30 @@ static void _cpu_check_features(void)
     uint64_t features = android_getCpuFeatures();
     arm_cpu_enable_crc32 = !!(features & ANDROID_CPU_ARM64_FEATURE_CRC32);
     arm_cpu_enable_pmull = !!(features & ANDROID_CPU_ARM64_FEATURE_PMULL);
+    arm_cpu_enable_neon = 1;  /* NEON is always available on ARM64 */
 #elif defined(ARMV8_OS_ANDROID) /* aarch32 */
     uint64_t features = android_getCpuFeatures();
     arm_cpu_enable_crc32 = !!(features & ANDROID_CPU_ARM_FEATURE_CRC32);
     arm_cpu_enable_pmull = !!(features & ANDROID_CPU_ARM_FEATURE_PMULL);
+    arm_cpu_enable_neon = !!(features & ANDROID_CPU_ARM_FEATURE_NEON);  /* Check for NEON feature */
 #elif defined(ARMV8_OS_LINUX) && defined(__aarch64__)
     unsigned long features = getauxval(AT_HWCAP);
     arm_cpu_enable_crc32 = !!(features & HWCAP_CRC32);
     arm_cpu_enable_pmull = !!(features & HWCAP_PMULL);
+    arm_cpu_enable_neon = !!(features & HWCAP_ASIMD);  /* ASIMD is ARM64's NEON */
 #elif defined(ARMV8_OS_LINUX) && (defined(__ARM_NEON) || defined(__ARM_NEON__))
-    /* Query HWCAP2 for ARMV8-A SoCs running in aarch32 mode */
-    unsigned long features = getauxval(AT_HWCAP2);
-    arm_cpu_enable_crc32 = !!(features & HWCAP2_CRC32);
-    arm_cpu_enable_pmull = !!(features & HWCAP2_PMULL);
+    /* Query HWCAP for ARMv7 (32-bit) systems */
+    unsigned long features = getauxval(AT_HWCAP);
+    arm_cpu_enable_crc32 = 0;  /* ARMv7 does not have CRC32 by default */
+    arm_cpu_enable_pmull = 0;  /* ARMv7 does not have PMULL by default */
+    arm_cpu_enable_neon = !!(features & HWCAP_NEON);
+#elif defined(__linux__) && (defined(__ARM_NEON) || defined(__ARM_NEON__))
+    /* General Linux ARM systems - check HWCAP for NEON */
+    unsigned long features = getauxval(AT_HWCAP);
+    arm_cpu_enable_neon = !!(features & HWCAP_NEON);
+    /* Only set crc32/pmull if on ARMv8+ */
+    arm_cpu_enable_crc32 = 0;  /* Default to 0 for ARM 32-bit */
+    arm_cpu_enable_pmull = 0;  /* Default to 0 for ARM 32-bit */
 #elif defined(ARMV8_OS_FUCHSIA)
     uint32_t features;
     zx_status_t rc = zx_system_get_features(ZX_FEATURE_KIND_CPU, &features);
@@ -132,9 +144,11 @@ static void _cpu_check_features(void)
         return;  /* Report nothing if ASIMD(NEON) is missing */
     arm_cpu_enable_crc32 = !!(features & ZX_ARM64_FEATURE_ISA_CRC32);
     arm_cpu_enable_pmull = !!(features & ZX_ARM64_FEATURE_ISA_PMULL);
+    arm_cpu_enable_neon = !!(features & ZX_ARM64_FEATURE_ISA_ASIMD);  /* ASIMD is ARM's NEON */
 #elif defined(ARMV8_OS_WINDOWS)
     arm_cpu_enable_crc32 = IsProcessorFeaturePresent(PF_ARM_V8_CRC32_INSTRUCTIONS_AVAILABLE);
     arm_cpu_enable_pmull = IsProcessorFeaturePresent(PF_ARM_V8_CRYPTO_INSTRUCTIONS_AVAILABLE);
+    arm_cpu_enable_neon = IsProcessorFeaturePresent(PF_ARM_NEON_INSTRUCTIONS_AVAILABLE);  /* Check for NEON */
 #elif defined(ARMV8_OS_IOS)
     // Determine what features are supported dynamically. This code is applicable to macOS
     // as well if we wish to do that dynamically on that platform in the future.
@@ -147,6 +161,7 @@ static void _cpu_check_features(void)
     len = sizeof(val);
     arm_cpu_enable_pmull = sysctlbyname("hw.optional.arm.FEAT_PMULL", &val, &len, 0, 0) == 0
                && val != 0;
+    arm_cpu_enable_neon = 1;  /* NEON is baseline ARM feature on iOS devices */
 #endif
 }
 #endif

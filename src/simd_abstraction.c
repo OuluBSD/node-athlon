@@ -11,7 +11,7 @@ static simd_functions_t simd_funcs = {0};
 static void init_simd_functions(void) {
     /* Initialize function pointers based on detected SIMD capabilities */
     cpu_check_features(); /* Ensure CPU features are detected */
-    
+
     #if defined(USE_SSE2)
         /* Initialize SSE2 function pointers */
         #ifdef __SSE2__
@@ -45,6 +45,17 @@ static void init_simd_functions(void) {
         simd_funcs.add_epi32 = altivec_add_epi32;
         simd_funcs.shuffle_epi32 = altivec_shuffle_epi32;
         current_simd_instruction_set = SIMD_ALTIVEC;
+        #endif
+    #elif defined(USE_NEON)
+        /* Initialize NEON function pointers */
+        #ifdef __ARM_NEON
+        #include <arm_neon.h>
+        simd_funcs.add_ps = neon_add_ps;
+        simd_funcs.mul_ps = neon_mul_ps;
+        simd_funcs.sub_ps = neon_sub_ps;
+        simd_funcs.add_epi32 = neon_add_epi32;
+        simd_funcs.shuffle_epi32 = neon_shuffle_epi32;
+        current_simd_instruction_set = SIMD_NEON;
         #endif
     #else
         /* Use scalar implementations */
@@ -144,7 +155,7 @@ static void altivec_mul_ps(void* a, void* b, void* result) {
     vector float* va = (vector float*)a;
     vector float* vb = (vector float*)b;
     vector float* vr = (vector float*)result;
-    *vr = vec_madd(*va, *vb, vec_splat_u32(0));  // For multiply, we use vec_mul or vec_madd
+    *vr = vec_madd(*va, *vb, vec_splat_u32(0));
 }
 
 static void altivec_sub_ps(void* a, void* b, void* result) {
@@ -164,11 +175,62 @@ static void altivec_add_epi32(void* a, void* b, void* result) {
 static void altivec_shuffle_epi32(void* a, int mask, void* result) {
     vector signed int* va = (vector signed int*)a;
     vector signed int* vr = (vector signed int*)result;
-    
+
     // Use vec_perm for shuffling, which requires a permutation vector
     // This is a simplified implementation
     vector unsigned char perm_vec = vec_lvsl(0, (int*)mask);  // This is just an example
     *vr = vec_perm(*va, *va, (vector unsigned char)perm_vec);
+}
+#endif
+
+/* NEON implementations */
+#ifdef __ARM_NEON
+#include <arm_neon.h>
+
+static void neon_add_ps(void* a, void* b, void* result) {
+    float32x4_t* va = (float32x4_t*)a;
+    float32x4_t* vb = (float32x4_t*)b;
+    float32x4_t* vr = (float32x4_t*)result;
+    *vr = vaddq_f32(*va, *vb);
+}
+
+static void neon_mul_ps(void* a, void* b, void* result) {
+    float32x4_t* va = (float32x4_t*)a;
+    float32x4_t* vb = (float32x4_t*)b;
+    float32x4_t* vr = (float32x4_t*)result;
+    *vr = vmulq_f32(*va, *vb);
+}
+
+static void neon_sub_ps(void* a, void* b, void* result) {
+    float32x4_t* va = (float32x4_t*)a;
+    float32x4_t* vb = (float32x4_t*)b;
+    float32x4_t* vr = (float32x4_t*)result;
+    *vr = vsubq_f32(*va, *vb);
+}
+
+static void neon_add_epi32(void* a, void* b, void* result) {
+    int32x4_t* va = (int32x4_t*)a;
+    int32x4_t* vb = (int32x4_t*)b;
+    int32x4_t* vr = (int32x4_t*)result;
+    *vr = vaddq_s32(*va, *vb);
+}
+
+static void neon_shuffle_epi32(void* a, int mask, void* result) {
+    int32x4_t* va = (int32x4_t*)a;
+    int32x4_t* vr = (int32x4_t*)result;
+
+    // NEON doesn't have a direct equivalent to SSE shuffle, so we use a combination of operations
+    // This is a simplified implementation - actual shuffle would require more complex logic
+    int32_t src[4];
+    vst1q_s32(src, *va);
+
+    int32_t dst[4];
+    dst[0] = src[(mask >> 0) & 0x3];
+    dst[1] = src[(mask >> 2) & 0x3];
+    dst[2] = src[(mask >> 4) & 0x3];
+    dst[3] = src[(mask >> 6) & 0x3];
+
+    *vr = vld1q_s32(dst);
 }
 #endif
 
@@ -243,6 +305,8 @@ int is_simd_available(simd_instruction_set_t instruction_set) {
             return x86_cpu_enable_3dnow;
         case SIMD_ALTIVEC:
             return ppc_cpu_enable_altivec;
+        case SIMD_NEON:
+            return arm_cpu_enable_neon;
         case SIMD_SCALAR:
             return 1;  /* Scalar is always available */
         default:
