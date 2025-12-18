@@ -111,7 +111,7 @@ parser.add_argument('--dest-cpu',
     action='store',
     dest='dest_cpu',
     choices=valid_arch,
-    help=f"CPU architecture to build for ({', '.join(valid_arch)})")
+    help="CPU architecture to build for ({})".format(', '.join(valid_arch)))
 
 parser.add_argument('--with-simd-support',
     action='store',
@@ -147,7 +147,7 @@ parser.add_argument('--dest-os',
     action='store',
     dest='dest_os',
     choices=valid_os,
-    help=f"operating system to build for ({', '.join(valid_os)})")
+    help="operating system to build for ({})".format(', '.join(valid_os)))
 
 parser.add_argument('--error-on-warn',
     action='store_true',
@@ -696,34 +696,34 @@ parser.add_argument('--with-arm-float-abi',
     action='store',
     dest='arm_float_abi',
     choices=valid_arm_float_abi,
-    help=f"specifies which floating-point ABI to use ({', '.join(valid_arm_float_abi)}).")
+    help="specifies which floating-point ABI to use ({})".format(', '.join(valid_arm_float_abi)))
 
 parser.add_argument('--with-arm-fpu',
     action='store',
     dest='arm_fpu',
     choices=valid_arm_fpu,
-    help=f"ARM FPU mode ({', '.join(valid_arm_fpu)}) [default: %(default)s]")
+    help="ARM FPU mode ({}) [default: %(default)s]".format(', '.join(valid_arm_fpu)))
 
 parser.add_argument('--with-mips-arch-variant',
     action='store',
     dest='mips_arch_variant',
     default='r2',
     choices=valid_mips_arch,
-    help=f"MIPS arch variant ({', '.join(valid_mips_arch)}) [default: %(default)s]")
+    help="MIPS arch variant ({}) [default: %(default)s]".format(', '.join(valid_mips_arch)))
 
 parser.add_argument('--with-mips-fpu-mode',
     action='store',
     dest='mips_fpu_mode',
     default='fp32',
     choices=valid_mips_fpu,
-    help=f"MIPS FPU mode ({', '.join(valid_mips_fpu)}) [default: %(default)s]")
+    help="MIPS FPU mode ({}) [default: %(default)s]".format(', '.join(valid_mips_fpu)))
 
 parser.add_argument('--with-mips-float-abi',
     action='store',
     dest='mips_float_abi',
     default='hard',
     choices=valid_mips_float_abi,
-    help=f"MIPS floating-point ABI ({', '.join(valid_mips_float_abi)}) [default: %(default)s]")
+    help="MIPS floating-point ABI ({}) [default: %(default)s]".format(', '.join(valid_mips_float_abi)))
 
 parser.add_argument('--use-largepages',
     action='store_true',
@@ -750,7 +750,7 @@ intl_optgroup.add_argument('--with-intl',
     dest='with_intl',
     default='full-icu',
     choices=valid_intl_modes,
-    help=f"Intl mode (valid choices: {', '.join(valid_intl_modes)}) [default: %(default)s]")
+    help="Intl mode (valid choices: {}) [default: %(default)s]".format(', '.join(valid_intl_modes)))
 
 intl_optgroup.add_argument('--without-intl',
     action='store_const',
@@ -777,7 +777,7 @@ intl_optgroup.add_argument('--with-icu-source',
     dest='with_icu_source',
     help='Intl mode: optional local path to icu/ dir, or path/URL of '
         'the icu4c source archive. '
-        f"v{icu_versions['minimum_icu']}.x or later recommended.")
+        'v{}.x or later recommended.'.format(icu_versions['minimum_icu']))
 
 intl_optgroup.add_argument('--with-icu-default-data-dir',
     action='store',
@@ -1017,13 +1017,13 @@ parser.add_argument('--v8-enable-hugepage',
     help='Enable V8 transparent hugepage support. This feature is only '+
          'available on Linux platform.')
 
-maglev_enabled_by_default_help = f"(Maglev is enabled by default on {','.join(maglev_enabled_architectures)})"
+maglev_enabled_by_default_help = "(Maglev is enabled by default on {})".format(','.join(maglev_enabled_architectures))
 
 parser.add_argument('--v8-disable-maglev',
     action='store_true',
     dest='v8_disable_maglev',
     default=None,
-    help=f"Disable V8's Maglev compiler. {maglev_enabled_by_default_help}")
+    help="Disable V8's Maglev compiler. {}".format(maglev_enabled_by_default_help))
 
 parser.add_argument('--v8-enable-short-builtin-calls',
     action='store_true',
@@ -1348,17 +1348,20 @@ def check_compiler(o):
   ok, is_clang, clang_version, gcc_version, is_apple = try_check_compiler(CXX, 'c++')
   o['variables']['clang'] = B(is_clang)
   version_str = ".".join(map(str, clang_version if is_clang else gcc_version))
-  print_verbose(f"Detected {'Apple ' if is_apple else ''}{'clang ' if is_clang else ''}C++ compiler (CXX={CXX}) version: {version_str}")
+  compiler_type = ('Apple ' if is_apple else '') + ('clang ' if is_clang else '')
+  print_verbose("Detected {}C++ compiler (CXX={}) version: {}".format(compiler_type, CXX, version_str))
   if not ok:
-    warn(f'failed to autodetect C++ compiler version (CXX={CXX})')
+    warn('failed to autodetect C++ compiler version (CXX={})'.format(CXX))
   elif ((is_apple and clang_version < (17, 0, 0)) or (not is_apple and clang_version < (19, 1, 0))) if is_clang else gcc_version < (12, 2, 0):
-    warn(f"C++ compiler (CXX={CXX}, {version_str}) too old, need g++ 12.2.0 or clang++ 19.1.0{' or Apple clang++ 17.0.0' if is_apple else ''}")
+    apple_version = ' or Apple clang++ 17.0.0' if is_apple else ''
+    warn("C++ compiler (CXX={}, {}) too old, need g++ 12.2.0 or clang++ 19.1.0{}".format(CXX, version_str, apple_version))
 
   ok, is_clang, clang_version, gcc_version, is_apple = try_check_compiler(CC, 'c')
   version_str = ".".join(map(str, clang_version if is_clang else gcc_version))
-  print_verbose(f"Detected {'Apple ' if is_apple else ''}{'clang ' if is_clang else ''}C compiler (CC={CC}) version: {version_str}")
+  compiler_type = ('Apple ' if is_apple else '') + ('clang ' if is_clang else '')
+  print_verbose("Detected {}C compiler (CC={}) version: {}".format(compiler_type, CC, version_str))
   if not ok:
-    warn(f'failed to autodetect C compiler version (CC={CC})')
+    warn('failed to autodetect C compiler version (CC={})'.format(CC))
   elif not is_clang and gcc_version < (4, 2, 0):
     # clang 3.2 is a little white lie because any clang version will probably
     # do for the C bits.  However, we might as well encourage people to upgrade
@@ -1849,10 +1852,10 @@ def configure_library(lib, output, pkgname=None):
         if 'msvs_settings' not in output:
           output['msvs_settings'] = { 'VCLinkerTool': { 'AdditionalOptions': [] } }
         output['msvs_settings']['VCLinkerTool']['AdditionalOptions'] += [
-          f"/LIBPATH:{options.__dict__[shared_lib + '_libpath']}"]
+          "/LIBPATH:{}".format(options.__dict__[shared_lib + '_libpath'])]
       else:
         output['libraries'] += [
-            f"-L{options.__dict__[shared_lib + '_libpath']}"]
+            "-L{}".format(options.__dict__[shared_lib + '_libpath'])]
     elif pkg_libpath:
       output['libraries'] += [pkg_libpath]
 
@@ -2144,7 +2147,7 @@ def configure_intl(o):
     icu_ver_major = icuversion.split('.')[0]
     o['variables']['icu_ver_major'] = icu_ver_major
     if int(icu_ver_major) < icu_versions['minimum_icu']:
-      error(f"icu4c v{icuversion} is too old, v{icu_versions['minimum_icu']}.x or later is required.")
+      error("icu4c v{} is too old, v{}.x or later is required.".format(icuversion, icu_versions['minimum_icu']))
     # libpath provides linker path which may contain spaces
     if libpath:
       o['libraries'] += [libpath]
@@ -2241,7 +2244,7 @@ def configure_intl(o):
     if localzip:
       nodedownload.unpack(localzip, icu_parent_path)
     else:
-      warn(f"* ECMA-402 (Intl) support didn't find ICU in {icu_full_path}..")
+      warn("* ECMA-402 (Intl) support didn't find ICU in {}..".format(icu_full_path))
   if not Path(icu_full_path).is_dir():
     error(f'''Cannot build Intl without ICU in {icu_full_path}.
        Fix, or disable with "--with-intl=none"''')
@@ -2263,15 +2266,15 @@ def configure_intl(o):
   if not icu_ver_major:
     error(f'Could not read U_ICU_VERSION_SHORT version from {uvernum_h}')
   elif int(icu_ver_major) < icu_versions['minimum_icu']:
-    error(f"icu4c v{icu_ver_major}.x is too old, v{icu_versions['minimum_icu']}.x or later is required.")
+    error("icu4c v{}.x is too old, v{}.x or later is required.".format(icu_ver_major, icu_versions['minimum_icu']))
   icu_endianness = sys.byteorder[0]
   o['variables']['icu_ver_major'] = icu_ver_major
   o['variables']['icu_endianness'] = icu_endianness
-  icu_data_file_l = f'icudt{icu_ver_major}l.dat' # LE filename
-  icu_data_file = f'icudt{icu_ver_major}{icu_endianness}.dat'
+  icu_data_file_l = 'icudt{}l.dat'.format(icu_ver_major) # LE filename
+  icu_data_file = 'icudt{}{}.dat'.format(icu_ver_major, icu_endianness)
   # relative to configure
   icu_data_path = Path(icu_full_path, 'source', 'data', 'in', icu_data_file_l) # LE
-  compressed_data = f'{icu_data_path}.bz2'
+  compressed_data = '{}.bz2'.format(icu_data_path)
   if not icu_data_path.is_file() and Path(compressed_data).is_file():
     # unpack. deps/icu is a temporary path
     if icu_tmp_path.is_dir():
