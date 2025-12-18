@@ -1539,7 +1539,8 @@ def CLTVersion():
     for key in [MAVERICKS_PKG_ID, STANDALONE_PKG_ID, FROM_XCODE_PKG_ID]:
         try:
             output = GetStdout(["/usr/sbin/pkgutil", "--pkg-info", key])
-            if m := re.search(regex, output):
+            m = re.search(regex, output)
+            if m:
                 return m.groupdict()["version"]
         except (GypError, OSError):
             continue
