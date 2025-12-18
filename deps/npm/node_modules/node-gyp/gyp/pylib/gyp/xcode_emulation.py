@@ -1137,7 +1137,7 @@ class XcodeSettings:
             source = os.path.join("${BUILT_PRODUCTS_DIR}", product_name)
             test_host = os.path.dirname(settings.get("TEST_HOST"))
             xctest_destination = os.path.join(test_host, "PlugIns", product_name)
-            postbuilds.extend([f"ditto {source} {xctest_destination}"])
+            postbuilds.extend(["ditto {} {}".format(source, xctest_destination)])
 
         key = self._GetIOSCodeSignIdentityKey(settings)
         if not key:
