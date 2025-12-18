@@ -1142,8 +1142,10 @@ def EvalCondition(condition, conditions_key, phase, variables, build_file):
             i = i + 3
             if i != len(condition):
                 raise GypError(
-                    f"{conditions_key} {cond_expr} has "
-                    f"{len(condition) - i} unexpected trailing items"
+                    "{} {} has "
+                    "{} unexpected trailing items".format(
+                        conditions_key, cond_expr, len(condition) - i
+                    )
                 )
         else:
             false_dict = None
