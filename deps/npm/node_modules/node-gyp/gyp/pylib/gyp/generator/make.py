@@ -1608,7 +1608,8 @@ $(obj).$(TOOLSET)/$(TARGET)/%%.o: $(obj)/%%%s FORCE_DO_CMD
 
         target_prefix = spec.get("product_prefix", target_prefix)
         target = spec.get("product_name", target)
-        if product_ext := spec.get("product_extension"):
+        product_ext = spec.get("product_extension")
+        if product_ext:
             target_ext = "." + product_ext
 
         return target_prefix + target + target_ext
