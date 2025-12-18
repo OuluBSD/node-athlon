@@ -2727,7 +2727,7 @@ def ValidateRulesInTarget(target, target_dict, extra_sources_for_rules):
         # Make sure that there's no conflict among rule names and extensions.
         rule_name = rule["rule_name"]
         if rule_name in rule_names:
-            raise GypError(f"rule {rule_name} exists in duplicate, target {target}")
+            raise GypError("rule {} exists in duplicate, target {}".format(rule_name, target))
         rule_names[rule_name] = rule
 
         rule_extension = rule["extension"]
