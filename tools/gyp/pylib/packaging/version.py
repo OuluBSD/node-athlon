@@ -67,7 +67,6 @@ class InvalidVersion(ValueError):
 
 
 class _BaseVersion:
-    _key: Tuple[Any, ...]
 
     def __hash__(self):
         return hash(self._key)
