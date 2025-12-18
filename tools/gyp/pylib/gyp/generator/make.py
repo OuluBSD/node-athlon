@@ -1549,7 +1549,7 @@ $(obj).$(TOOLSET)/$(TARGET)/%%.o: $(obj)/%%%s FORCE_DO_CMD
                 "mm": "GYP_PCH_OBJCXXFLAGS",
             }[lang]
             self.WriteLn(
-                f"{gch}: {var_name} := {lang_flag} " + "$(DEFS_$(BUILDTYPE)) "
+                "{}: {} := {} ".format(gch, var_name, lang_flag) + "$(DEFS_$(BUILDTYPE)) "
                 "$(INCS_$(BUILDTYPE)) "
                 "$(CFLAGS_$(BUILDTYPE)) " + extra_flags
             )
