@@ -2400,27 +2400,27 @@ def make_bin_override():
       os.path.realpath(which_python) == os.path.realpath(sys.executable)):
     return
 
-  bin_override = Path('out', 'tools', 'bin').resolve()
+  bin_override_path = os.path.abspath(os.path.join('out', 'tools', 'bin'))
   try:
-    bin_override.mkdir(parents=True)
+    os.makedirs(bin_override_path, exist_ok=True)
   except OSError as e:
     if e.errno != errno.EEXIST:
       raise e
 
-  python_link = bin_override / 'python'
+  python_link_path = os.path.join(bin_override_path, 'python')
   try:
-    python_link.unlink()
+    os.remove(python_link_path)
   except OSError as e:
     if e.errno != errno.ENOENT:
       raise e
-  os.symlink(sys.executable, python_link)
+  os.symlink(sys.executable, python_link_path)
 
   # We need to set the environment right now so that when gyp (in run_gyp)
   # shells out, it finds the right python (specifically at
   # https://github.com/nodejs/node/blob/d82e107/deps/v8/gypfiles/toolchain.gypi#L43)
-  os.environ['PATH'] = str(bin_override) + ':' + os.environ['PATH']
+  os.environ['PATH'] = bin_override_path + ':' + os.environ['PATH']
 
-  return bin_override
+  return bin_override_path
 
 output = {
   'variables': {},
