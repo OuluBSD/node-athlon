@@ -32,22 +32,34 @@ from ._structures import Infinity, InfinityType, NegativeInfinity, NegativeInfin
 
 __all__ = ["VERSION_PATTERN", "parse", "Version", "InvalidVersion"]
 
-LocalType = Tuple[Union[int, str], ...]
+try:
+    LocalType = Tuple[Union[int, str], ...]
 
-CmpPrePostDevType = Union[InfinityType, NegativeInfinityType, Tuple[str, int]]
-CmpLocalType = Union[
-    NegativeInfinityType,
-    Tuple[Union[Tuple[int, str], Tuple[NegativeInfinityType, Union[int, str]]], ...],
-]
-CmpKey = Tuple[
-    int,
-    Tuple[int, ...],
-    CmpPrePostDevType,
-    CmpPrePostDevType,
-    CmpPrePostDevType,
-    CmpLocalType,
-]
-VersionComparisonMethod = Callable[[CmpKey, CmpKey], bool]
+    CmpPrePostDevType = Union[InfinityType, NegativeInfinityType, Tuple[str, int]]
+    CmpLocalType = Union[
+        NegativeInfinityType,
+        Tuple[Union[Tuple[int, str], Tuple[NegativeInfinityType, Union[int, str]]], ...],
+    ]
+    CmpKey = Tuple[
+        int,
+        Tuple[int, ...],
+        CmpPrePostDevType,
+        CmpPrePostDevType,
+        CmpPrePostDevType,
+        CmpLocalType,
+    ]
+except (TypeError, NameError):
+    # For Python 3.4, when subscriptable types are not supported
+    LocalType = object
+    CmpPrePostDevType = object
+    CmpLocalType = object
+    CmpKey = object
+
+try:
+    VersionComparisonMethod = Callable[[CmpKey, CmpKey], bool]
+except (TypeError, NameError):
+    # For Python 3.4, when subscriptable types are not supported
+    VersionComparisonMethod = object
 
 
 # Define the _Version NamedTuple in a Python 3.4 compatible way
