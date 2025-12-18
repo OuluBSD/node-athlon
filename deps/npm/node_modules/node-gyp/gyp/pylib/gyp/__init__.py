@@ -216,7 +216,7 @@ def ShlexEnv(env_name):
 
 def FormatOpt(opt, value):
     if opt.startswith("--"):
-        return f"{opt}={value}"
+        return "{}={}".format(opt, value)
     return opt + value
 
 
