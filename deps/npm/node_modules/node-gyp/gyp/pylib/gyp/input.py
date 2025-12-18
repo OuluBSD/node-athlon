@@ -1132,8 +1132,10 @@ def EvalCondition(condition, conditions_key, phase, variables, build_file):
         true_dict = condition[i + 1]
         if not isinstance(true_dict, dict):
             raise GypError(
-                f"{conditions_key} {cond_expr} must be followed by a dictionary, "
-                f"not {type(true_dict)}"
+                "{} {} must be followed by a dictionary, "
+                "not {}".format(
+                    conditions_key, cond_expr, type(true_dict)
+                )
             )
         if len(condition) > i + 2 and isinstance(condition[i + 2], dict):
             false_dict = condition[i + 2]
