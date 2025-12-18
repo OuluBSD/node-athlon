@@ -24,7 +24,7 @@ DEBUG_VARIABLES = "variables"
 DEBUG_INCLUDES = "includes"
 
 
-def EscapeForCString(string: bytes | str) -> str:
+def EscapeForCString(string):
     if isinstance(string, str):
         string = string.encode(encoding="utf8")
 
