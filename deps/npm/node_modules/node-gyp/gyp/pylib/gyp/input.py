@@ -1196,7 +1196,7 @@ def EvalSingleCondition(cond_expr, true_dict, false_dict, phase, variables, buil
     except NameError as e:
         gyp.common.ExceptionAppend(
             e,
-            f"while evaluating condition '{cond_expr_expanded}' in {build_file}",
+            "while evaluating condition '{}' in {}".format(cond_expr_expanded, build_file),
         )
         raise GypError(e)
 
