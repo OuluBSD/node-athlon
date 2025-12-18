@@ -429,16 +429,21 @@ def GetCompilerPredefines():  # -> dict
     def replace_sep(s):
         return s.replace(os.sep, "/") if os.sep != "/" else s
 
-    if CC := os.environ.get("CC_target") or os.environ.get("CC"):
+    CC = os.environ.get("CC_target") or os.environ.get("CC")
+    if CC:
         cmd += shlex.split(replace_sep(CC))
-        if CFLAGS := os.environ.get("CFLAGS"):
+        CFLAGS = os.environ.get("CFLAGS")
+        if CFLAGS:
             cmd += shlex.split(replace_sep(CFLAGS))
-    elif CXX := os.environ.get("CXX_target") or os.environ.get("CXX"):
-        cmd += shlex.split(replace_sep(CXX))
-        if CXXFLAGS := os.environ.get("CXXFLAGS"):
-            cmd += shlex.split(replace_sep(CXXFLAGS))
     else:
-        return defines
+        CXX = os.environ.get("CXX_target") or os.environ.get("CXX")
+        if CXX:
+            cmd += shlex.split(replace_sep(CXX))
+            CXXFLAGS = os.environ.get("CXXFLAGS")
+            if CXXFLAGS:
+                cmd += shlex.split(replace_sep(CXXFLAGS))
+        else:
+            return defines
 
     if sys.platform == "win32":
         fd, input = tempfile.mkstemp(suffix=".c")
