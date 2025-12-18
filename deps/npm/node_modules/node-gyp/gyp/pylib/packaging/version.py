@@ -63,14 +63,27 @@ except (TypeError, NameError):
 
 
 # Define the _Version NamedTuple in a Python 3.4 compatible way
-_Version = NamedTuple('_Version', [
-    ('epoch', int),
-    ('release', Tuple[int, ...]),
-    ('dev', Optional[Tuple[str, int]]),
-    ('pre', Optional[Tuple[str, int]]),
-    ('post', Optional[Tuple[str, int]]),
-    ('local', Optional[LocalType])
-])
+try:
+    _Version = NamedTuple('_Version', [
+        ('epoch', int),
+        ('release', Tuple[int, ...]),
+        ('dev', Optional[Tuple[str, int]]),
+        ('pre', Optional[Tuple[str, int]]),
+        ('post', Optional[Tuple[str, int]]),
+        ('local', Optional[LocalType])
+    ])
+except (TypeError, NameError):
+    # For Python 3.4 when typing is not available, define a basic tuple-based class
+    class _Version(tuple):
+        __slots__ = ()
+        def __new__(cls, epoch, release, dev, pre, post, local):
+            return tuple.__new__(cls, (epoch, release, dev, pre, post, local))
+        epoch = property(lambda self: self[0])
+        release = property(lambda self: self[1])
+        dev = property(lambda self: self[2])
+        pre = property(lambda self: self[3])
+        post = property(lambda self: self[4])
+        local = property(lambda self: self[5])
 
 
 def parse(version):
