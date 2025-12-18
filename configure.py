@@ -2259,7 +2259,7 @@ def configure_intl(o):
   icu_ver_major = None
   matchVerExp = r'^\s*#define\s+U_ICU_VERSION_SHORT\s+"([^"]*)".*'
   match_version = re.compile(matchVerExp)
-  with io.open(uvernum_h, encoding='utf8') as in_file:
+  with io.open(str(uvernum_h), encoding='utf8') as in_file:
     for line in in_file:
       m = match_version.match(line)
       if m:
