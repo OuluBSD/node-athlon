@@ -1471,10 +1471,11 @@ $(obj).$(TOOLSET)/$(TARGET)/%%.o: $(obj)/%%%s FORCE_DO_CMD
                 order_only=True,
             )
 
-        if pchdeps := precompiled_header.GetObjDependencies(compilable, objs):
+        pchdeps = precompiled_header.GetObjDependencies(compilable, objs)
+        if pchdeps:
             self.WriteLn("# Dependencies from obj files to their precompiled headers")
             for source, obj, gch in pchdeps:
-                self.WriteLn(f"{obj}: {gch}")
+                self.WriteLn("{}: {}".format(obj, gch))
             self.WriteLn("# End precompiled header dependencies")
 
         if objs:
