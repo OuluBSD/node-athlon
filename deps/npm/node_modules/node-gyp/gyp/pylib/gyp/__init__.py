@@ -208,7 +208,8 @@ def NameValueListToDict(name_value_list):
 
 
 def ShlexEnv(env_name):
-    if flags := os.environ.get(env_name) or []:
+    flags = os.environ.get(env_name) or []
+    if flags:
         flags = shlex.split(flags)
     return flags
 
