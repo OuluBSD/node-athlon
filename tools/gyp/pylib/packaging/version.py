@@ -33,16 +33,18 @@ CmpKey = Tuple[
 VersionComparisonMethod = Callable[[CmpKey, CmpKey], bool]
 
 
-class _Version(NamedTuple):
-    epoch: int
-    release: Tuple[int, ...]
-    dev: Optional[Tuple[str, int]]
-    pre: Optional[Tuple[str, int]]
-    post: Optional[Tuple[str, int]]
-    local: Optional[LocalType]
+# Define the _Version NamedTuple in a Python 3.4 compatible way
+_Version = NamedTuple('_Version', [
+    ('epoch', int),
+    ('release', Tuple[int, ...]),
+    ('dev', Optional[Tuple[str, int]]),
+    ('pre', Optional[Tuple[str, int]]),
+    ('post', Optional[Tuple[str, int]]),
+    ('local', Optional[LocalType])
+])
 
 
-def parse(version: str) -> "Version":
+def parse(version):
     """Parse the given version string.
 
     >>> parse('1.0.dev1')
@@ -67,19 +69,19 @@ class InvalidVersion(ValueError):
 class _BaseVersion:
     _key: Tuple[Any, ...]
 
-    def __hash__(self) -> int:
+    def __hash__(self):
         return hash(self._key)
 
     # Please keep the duplicated `isinstance` check
     # in the six comparisons hereunder
     # unless you find a way to avoid adding overhead function calls.
-    def __lt__(self, other: "_BaseVersion") -> bool:
+    def __lt__(self, other):
         if not isinstance(other, _BaseVersion):
             return NotImplemented
 
         return self._key < other._key
 
-    def __le__(self, other: "_BaseVersion") -> bool:
+    def __le__(self, other):
         if not isinstance(other, _BaseVersion):
             return NotImplemented
 
@@ -183,7 +185,7 @@ class Version(_BaseVersion):
     _regex = re.compile(r"^\s*" + VERSION_PATTERN + r"\s*$", re.VERBOSE | re.IGNORECASE)
     _key: CmpKey
 
-    def __init__(self, version: str) -> None:
+    def __init__(self, version):
         """Initialize a Version object.
 
         :param version:
