@@ -31,10 +31,10 @@ def is_valid(file_name):
 
   sorted_usings = sorted(usings, key=lambda x: x.lower())
   if sorted_usings != usings:
-    print(f"using statements aren't sorted in '{file_name}'.")
+    print("using statements aren't sorted in '{}'.".format(file_name))
     for num, actual, expected in zip(line_numbers, usings, sorted_usings):
       if actual != expected:
-        print(f'\tLine {num}: Actual: {actual}, Expected: {expected}')
+        print('\tLine {}: Actual: {}, Expected: {}'.format(num, actual, expected))
     return False
   return valid
 
