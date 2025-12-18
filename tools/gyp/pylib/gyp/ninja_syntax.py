@@ -33,7 +33,7 @@ class Writer:
             return
         if isinstance(value, list):
             value = " ".join(filter(None, value))  # Filter out empty strings.
-        self._line(f"{key} = {value}", indent)
+        self._line("{} = {}".format(key, value), indent)
 
     def pool(self, name, depth):
         self._line("pool %s" % name)

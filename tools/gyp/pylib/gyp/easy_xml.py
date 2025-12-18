@@ -102,7 +102,7 @@ def _ConstructContentList(xml_parts, specification, pretty, level=0):
                 _ConstructContentList(xml_parts, child_spec, pretty, level + 1)
         if multi_line and indentation:
             xml_parts.append(indentation)
-        xml_parts.append(f"</{name}>{new_line}")
+        xml_parts.append("</{}>{}".format(name, new_line))
     else:
         xml_parts.append("/>%s" % new_line)
 
