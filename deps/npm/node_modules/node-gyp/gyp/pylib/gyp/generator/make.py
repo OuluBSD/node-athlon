@@ -1066,7 +1066,7 @@ $(obj).$(TOOLSET)/$(TARGET)/%%.o: $(obj)/%%%s FORCE_DO_CMD
                     "quiet_cmd_{} = ACTION {} $@".format(name, action["message"])
                 )
             else:
-                self.WriteLn(f"quiet_cmd_{name} = ACTION {name} $@")
+                self.WriteLn("quiet_cmd_{} = ACTION {} $@".format(name, name))
             if len(dirs) > 0:
                 command = "mkdir -p %s" % " ".join(dirs) + "; " + command
 
