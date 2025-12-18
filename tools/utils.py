@@ -113,7 +113,13 @@ def IsWindows():
 
 
 def SearchFiles(dir, ext):
-  list = glob.glob(dir+ '/**/*.' + ext, recursive=True)
+  # Use os.walk for recursive search instead of glob with recursive=True (Python 3.5+ feature)
+  import os
+  list = []
+  for root, dirs, files in os.walk(dir):
+    for file in files:
+      if file.endswith('.' + ext):
+        list.append(os.path.join(root, file))
   if sys.platform == 'win32':
     list = [ x.replace('\\', '/')for x in list]
   return sorted(list)
