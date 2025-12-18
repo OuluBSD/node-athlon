@@ -1164,7 +1164,7 @@ class XcodeSettings:
             for framework in frameworks:
                 source = os.path.join(platform_root, framework)
                 destination = os.path.join(frameworks_dir, os.path.basename(framework))
-                postbuilds.extend([f"ditto {source} {destination}"])
+                postbuilds.extend(["ditto {} {}".format(source, destination)])
 
                 # Then re-sign everything with 'preserve=True'
                 postbuilds.extend(
