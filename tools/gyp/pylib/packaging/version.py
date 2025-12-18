@@ -9,7 +9,24 @@
 
 import itertools
 import re
-from typing import Any, Callable, NamedTuple, Optional, SupportsInt, Tuple, Union
+
+try:
+    from typing import Any, Callable, NamedTuple, Optional, SupportsInt, Tuple, Union
+except ImportError:
+    # typing module is not available in Python 3.4, so we'll use the typing backport if possible
+    # or fall back to None for type hinting purposes (which won't affect execution)
+    try:
+        from typing_extensions import Any, Callable, NamedTuple, Optional, SupportsInt, Tuple, Union
+    except ImportError:
+        # If neither is available, define as None (type hints don't affect runtime)
+        Any = object
+        Callable = object
+        SupportsInt = object
+        Union = object
+        Tuple = object
+        # For NamedTuple and Optional, we need to define them properly later
+        NamedTuple = None  # Will be handled separately
+        Optional = lambda x: x  # Dummy function
 
 from ._structures import Infinity, InfinityType, NegativeInfinity, NegativeInfinityType
 
