@@ -491,9 +491,7 @@ class Version(_BaseVersion):
         return self.release[2] if len(self.release) >= 3 else 0
 
 
-def _parse_letter_version(
-    letter: Optional[str], number: Union[str, bytes, SupportsInt, None]
-) -> Optional[Tuple[str, int]]:
+def _parse_letter_version(letter, number):
 
     if letter:
         # We consider there to be an implicit 0 in a pre-release if there is
