@@ -305,7 +305,7 @@ class Version(_BaseVersion):
         return "".join(parts)
 
     @property
-    def epoch(self) -> int:
+    def epoch(self):
         """The epoch of the version.
 
         >>> Version("2.0.0").epoch
@@ -316,7 +316,7 @@ class Version(_BaseVersion):
         return self._version.epoch
 
     @property
-    def release(self) -> Tuple[int, ...]:
+    def release(self):
         """The components of the "release" segment of the version.
 
         >>> Version("1.2.3").release
@@ -332,7 +332,7 @@ class Version(_BaseVersion):
         return self._version.release
 
     @property
-    def pre(self) -> Optional[Tuple[str, int]]:
+    def pre(self):
         """The pre-release segment of the version.
 
         >>> print(Version("1.2.3").pre)
@@ -347,7 +347,7 @@ class Version(_BaseVersion):
         return self._version.pre
 
     @property
-    def post(self) -> Optional[int]:
+    def post(self):
         """The post-release number of the version.
 
         >>> print(Version("1.2.3").post)
@@ -358,7 +358,7 @@ class Version(_BaseVersion):
         return self._version.post[1] if self._version.post else None
 
     @property
-    def dev(self) -> Optional[int]:
+    def dev(self):
         """The development number of the version.
 
         >>> print(Version("1.2.3").dev)
@@ -369,7 +369,7 @@ class Version(_BaseVersion):
         return self._version.dev[1] if self._version.dev else None
 
     @property
-    def local(self) -> Optional[str]:
+    def local(self):
         """The local version segment of the version.
 
         >>> print(Version("1.2.3").local)
@@ -383,7 +383,7 @@ class Version(_BaseVersion):
             return None
 
     @property
-    def public(self) -> str:
+    def public(self):
         """The public portion of the version.
 
         >>> Version("1.2.3").public
@@ -396,7 +396,7 @@ class Version(_BaseVersion):
         return str(self).split("+", 1)[0]
 
     @property
-    def base_version(self) -> str:
+    def base_version(self):
         """The "base version" of the version.
 
         >>> Version("1.2.3").base_version
@@ -421,7 +421,7 @@ class Version(_BaseVersion):
         return "".join(parts)
 
     @property
-    def is_prerelease(self) -> bool:
+    def is_prerelease(self):
         """Whether this version is a pre-release.
 
         >>> Version("1.2.3").is_prerelease
@@ -438,7 +438,7 @@ class Version(_BaseVersion):
         return self.dev is not None or self.pre is not None
 
     @property
-    def is_postrelease(self) -> bool:
+    def is_postrelease(self):
         """Whether this version is a post-release.
 
         >>> Version("1.2.3").is_postrelease
@@ -449,7 +449,7 @@ class Version(_BaseVersion):
         return self.post is not None
 
     @property
-    def is_devrelease(self) -> bool:
+    def is_devrelease(self):
         """Whether this version is a development release.
 
         >>> Version("1.2.3").is_devrelease
@@ -460,7 +460,7 @@ class Version(_BaseVersion):
         return self.dev is not None
 
     @property
-    def major(self) -> int:
+    def major(self):
         """The first item of :attr:`release` or ``0`` if unavailable.
 
         >>> Version("1.2.3").major
@@ -469,7 +469,7 @@ class Version(_BaseVersion):
         return self.release[0] if len(self.release) >= 1 else 0
 
     @property
-    def minor(self) -> int:
+    def minor(self):
         """The second item of :attr:`release` or ``0`` if unavailable.
 
         >>> Version("1.2.3").minor
@@ -480,7 +480,7 @@ class Version(_BaseVersion):
         return self.release[1] if len(self.release) >= 2 else 0
 
     @property
-    def micro(self) -> int:
+    def micro(self):
         """The third item of :attr:`release` or ``0`` if unavailable.
 
         >>> Version("1.2.3").micro
@@ -530,7 +530,7 @@ def _parse_letter_version(
 _local_version_separators = re.compile(r"[\._-]")
 
 
-def _parse_local_version(local: Optional[str]) -> Optional[LocalType]:
+def _parse_local_version(local):
     """
     Takes a string like abc.1.twelve and turns it into ("abc", 1, "twelve").
     """
