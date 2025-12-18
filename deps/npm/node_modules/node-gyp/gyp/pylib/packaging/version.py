@@ -547,7 +547,7 @@ def _cmpkey(
 
     if local is None:
         # Versions without a local segment should sort before those with one.
-        _local: CmpLocalType = NegativeInfinity
+        _local = NegativeInfinity
     else:
         # Versions with a local segment need that segment parsed to implement
         # the sorting rules in PEP440.
