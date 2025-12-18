@@ -540,14 +540,7 @@ def _parse_local_version(local):
     return None
 
 
-def _cmpkey(
-    epoch: int,
-    release: Tuple[int, ...],
-    pre: Optional[Tuple[str, int]],
-    post: Optional[Tuple[str, int]],
-    dev: Optional[Tuple[str, int]],
-    local: Optional[LocalType],
-) -> CmpKey:
+def _cmpkey(epoch, release, pre, post, dev, local):
 
     # When we compare a release version, we want to compare it with all of the
     # trailing zeros removed. So we'll use a reverse the list, drop all the now
