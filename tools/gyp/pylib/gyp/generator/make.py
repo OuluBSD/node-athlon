@@ -1554,7 +1554,7 @@ $(obj).$(TOOLSET)/$(TARGET)/%%.o: $(obj)/%%%s FORCE_DO_CMD
                 "$(CFLAGS_$(BUILDTYPE)) " + extra_flags
             )
 
-            self.WriteLn(f"{gch}: {input} FORCE_DO_CMD")
+            self.WriteLn("{}: {} FORCE_DO_CMD".format(gch, input))
             self.WriteLn("\t@$(call do_cmd,pch_%s,1)" % lang)
             self.WriteLn("")
             assert " " not in gch, "Spaces in gch filenames not supported (%s)" % gch
@@ -2009,7 +2009,7 @@ $(obj).$(TOOLSET)/$(TARGET)/%%.o: $(obj)/%%%s FORCE_DO_CMD
                 and self.toolset == "target"
             ):
                 # On mac, products are created in install_path immediately.
-                assert install_path == self.output, f"{install_path} != {self.output}"
+                assert install_path == self.output, "{} != {}".format(install_path, self.output)
 
             # Point the target alias to the final binary output.
             self.WriteMakeRule(
@@ -2085,7 +2085,7 @@ $(obj).$(TOOLSET)/$(TARGET)/%%.o: $(obj)/%%%s FORCE_DO_CMD
         if value_list:
             value_list = [replace_sep(quoter(prefix + value)) for value in value_list]
             values = " \\\n\t" + " \\\n\t".join(value_list)
-        self.fp.write(f"{variable} :={values}\n\n")
+        self.fp.write("{} :={}\n\n".format(variable, values))
 
     def WriteDoCmd(
         self, outputs, inputs, command, part_of_all, comment=None, postbuilds=False
@@ -2102,7 +2102,7 @@ $(obj).$(TOOLSET)/$(TARGET)/%%.o: $(obj)/%%%s FORCE_DO_CMD
         self.WriteMakeRule(
             outputs,
             inputs,
-            actions=[f"$(call do_cmd,{command}{suffix})"],
+            actions=["$(call do_cmd,{}{})".format(command, suffix)],
             comment=comment,
             command=command,
             force=True,
@@ -2311,14 +2311,14 @@ $(obj).$(TOOLSET)/$(TARGET)/%%.o: $(obj)/%%%s FORCE_DO_CMD
             #  export foo := a\ b
             # it does not -- the backslash is written to the env as literal character.
             # So don't escape spaces in |env[k]|.
-            self.WriteLn(f"{QuoteSpaces(target)}: export {k} := {v}")
+            self.WriteLn("{}: export {} := {}".format(QuoteSpaces(target), k, v))
 
     def Objectify(self, path):
         """Convert a path to its output directory form."""
         if "$(" in path:
             path = path.replace("$(obj)/", "$(obj).%s/$(TARGET)/" % self.toolset)
         if "$(obj)" not in path:
-            path = f"$(obj).{self.toolset}/$(TARGET)/{path}"
+            path = "$(obj).{}/$(TARGET)/{}".format(self.toolset, path)
         return path
 
     def Pchify(self, path, lang):
@@ -2326,10 +2326,10 @@ $(obj).$(TOOLSET)/$(TARGET)/%%.o: $(obj)/%%%s FORCE_DO_CMD
         path = self.Absolutify(path)
         if "$(" in path:
             path = path.replace(
-                "$(obj)/", f"$(obj).{self.toolset}/$(TARGET)/pch-{lang}"
+                "$(obj)/", "$(obj).{}/$(TARGET)/pch-{}".format(self.toolset, lang)
             )
             return path
-        return f"$(obj).{self.toolset}/$(TARGET)/pch-{lang}/{path}"
+        return "$(obj).{}/$(TARGET)/pch-{}/{}".format(self.toolset, lang, path)
 
     def Absolutify(self, path):
         """Convert a subdirectory-relative path into a base-relative path.
@@ -2410,7 +2410,7 @@ def PerformBuild(data, configurations, params):
         if options.toplevel_dir and options.toplevel_dir != ".":
             arguments += "-C", options.toplevel_dir
         arguments.append("BUILDTYPE=" + config)
-        print(f"Building [{config}]: {arguments}")
+        print("Building [{}]: {}".format(config, arguments))
         subprocess.check_call(arguments)
 
 
@@ -2604,7 +2604,7 @@ def GenerateOutput(target_list, target_dicts, data, params):
             value = "$(abspath %s)" % value
         wrapper = wrappers.get(key)
         if wrapper:
-            value = f"{wrapper} {value}"
+            value = "{} {}".format(wrapper, value)
             del wrappers[key]
         if key in ("CC", "CC.host", "CXX", "CXX.host"):
             make_global_settings += (
@@ -2614,10 +2614,10 @@ def GenerateOutput(target_list, target_dicts, data, params):
             env_key = key.replace(".", "_")  # CC.host -> CC_host
             if env_key in os.environ:
                 value = os.environ[env_key]
-            make_global_settings += f"  {key} = {value}\n"
+            make_global_settings += "  {} = {}\n".format(key, value)
             make_global_settings += "endif\n"
         else:
-            make_global_settings += f"{key} ?= {value}\n"
+            make_global_settings += "{} ?= {}\n".format(key, value)
     # TODO(ukai): define cmd when only wrapper is specified in
     # make_global_settings.
 
@@ -2656,7 +2656,7 @@ def GenerateOutput(target_list, target_dicts, data, params):
         this_make_global_settings = data[build_file].get("make_global_settings", [])
         assert make_global_settings_array == this_make_global_settings, (
             "make_global_settings needs to be the same for all targets "
-            f"{this_make_global_settings} vs. {make_global_settings}"
+            "{} vs. {}".format(this_make_global_settings, make_global_settings)
         )
 
         build_files.add(gyp.common.RelativePath(build_file, options.toplevel_dir))
