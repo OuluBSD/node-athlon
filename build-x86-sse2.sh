@@ -12,6 +12,7 @@ CLEAN=false
 JOBS=1
 WITH_NPM=true
 WITH_INTL=true
+PYTHON_EXECUTABLE="python3"  # Default to python3 for backward compatibility
 SHOW_HELP=false
 
 for arg in "$@"; do
@@ -33,6 +34,13 @@ for arg in "$@"; do
     --without-intl)
       WITH_INTL=false
       ;;
+    --python=*)
+      PYTHON_EXECUTABLE="${arg#--python=}"
+      if ! command -v "$PYTHON_EXECUTABLE" &>/dev/null; then
+        echo "Error: Python executable '$PYTHON_EXECUTABLE' not found in PATH"
+        exit 1
+      fi
+      ;;
     --help|-h)
       SHOW_HELP=true
       ;;
@@ -49,6 +57,7 @@ if [ "$SHOW_HELP" = true ]; then
   echo "  -jN           Run N build jobs in parallel (default: 1)"
   echo "  --without-npm  Build without npm (default: npm is included)"
   echo "  --without-intl Build without internationalization (default: intl is included)"
+  echo "  --python=PATH  Specify Python executable to use (default: python3)"
   echo "  --help, -h    Show this help message"
   echo ""
   echo "Builds Node.js with SSE2 support for x86 systems."
@@ -72,7 +81,7 @@ export CXX="g++ -m32 -march=pentium4 -msse2 -mfpmath=sse -mmmx"
 export CPP="cpp -m32 -march=pentium4 -msse2 -mfpmath=sse -mmmx"
 
 # Build configure command based on npm and intl options
-CONFIGURE_CMD=("/usr/bin/env" "python3" "./configure")
+CONFIGURE_CMD=("/usr/bin/env" "$PYTHON_EXECUTABLE" "./configure")
 CONFIGURE_CMD+=("--dest-cpu=ia32")
 CONFIGURE_CMD+=("--dest-os=linux")
 CONFIGURE_CMD+=("--without-inspector")
