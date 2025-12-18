@@ -227,7 +227,7 @@ def LoadOneBuildFile(build_file_path, data, aux_data, includes, is_target, check
     if os.path.exists(build_file_path):
         build_file_contents = open(build_file_path, encoding="utf-8").read()
     else:
-        raise GypError(f"{build_file_path} not found (cwd: {os.getcwd()})")
+        raise GypError("{} not found (cwd: {})".format(build_file_path, os.getcwd()))
 
     build_file_data = None
     try:
