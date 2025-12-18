@@ -1083,7 +1083,7 @@ class XcodeSettings:
 
             if not quiet:
                 result.append("echo STRIP\\(%s\\)" % self.spec["target_name"])
-            result.append(f"strip {strip_flags} {output_binary}")
+            result.append("strip {} {}".format(strip_flags, output_binary))
 
         self.configname = None
         return result
