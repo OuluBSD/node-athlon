@@ -540,7 +540,7 @@ def _cmpkey(
 
     # Versions without a development segment should sort after those with one.
     if dev is None:
-        _dev: CmpPrePostDevType = Infinity
+        _dev = Infinity
 
     else:
         _dev = dev
