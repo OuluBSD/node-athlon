@@ -2279,7 +2279,7 @@ def configure_intl(o):
   if not icu_data_path.is_file() and Path(compressed_data).is_file():
     # unpack. deps/icu is a temporary path
     if icu_tmp_path.is_dir():
-      shutil.rmtree(icu_tmp_path)
+      shutil.rmtree(str(icu_tmp_path))
     icu_tmp_path.mkdir()
     icu_data_path = icu_tmp_path / icu_data_file_l
     with icu_data_path.open(mode='wb') as outf:
