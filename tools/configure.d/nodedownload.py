@@ -31,7 +31,7 @@ def retrievefile(url, targetfile):
         sys.stdout.write(' <%s>\nConnecting...\r' % url)
         sys.stdout.flush()
         opener = build_opener()
-        opener.addheaders = [('User-agent', f'Python-urllib/{sys.version_info.major}.{sys.version_info.minor} node.js/configure')]
+        opener.addheaders = [('User-agent', 'Python-urllib/{}.{} node.js/configure'.format(sys.version_info.major, sys.version_info.minor))]
         install_opener(opener)
         urlretrieve(url, targetfile, reporthook=reporthook)
         print('')  # clear the line
