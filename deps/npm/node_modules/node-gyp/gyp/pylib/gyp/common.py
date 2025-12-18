@@ -447,7 +447,7 @@ def GetCompilerPredefines():  # -> dict
 
     if sys.platform == "win32":
         fd, input = tempfile.mkstemp(suffix=".c")
-        real_cmd = [*cmd, "-dM", "-E", "-x", "c", input]
+        real_cmd = cmd + ["-dM", "-E", "-x", "c", input]
         try:
             os.close(fd)
             stdout = subprocess.run(
@@ -465,7 +465,7 @@ def GetCompilerPredefines():  # -> dict
             os.unlink(input)
     else:
         input = "/dev/null"
-        real_cmd = [*cmd, "-dM", "-E", "-x", "c", input]
+        real_cmd = cmd + ["-dM", "-E", "-x", "c", input]
         try:
             stdout = subprocess.run(
                 real_cmd, shell=False, capture_output=True, check=True
