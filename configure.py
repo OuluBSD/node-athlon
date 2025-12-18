@@ -1088,20 +1088,20 @@ auto_downloads = nodedownload.parse(options.download_list)
 
 def error(msg):
   prefix = '\033[1m\033[31mERROR\033[0m' if os.isatty(1) else 'ERROR'
-  print(f'{prefix}: {msg}')
+  print('{}: {}'.format(prefix, msg))
   sys.exit(1)
 
 def warn(msg):
   warn.warned = True
   prefix = '\033[1m\033[93mWARNING\033[0m' if os.isatty(1) else 'WARNING'
-  print(f'{prefix}: {msg}')
+  print('{}: {}'.format(prefix, msg))
 
 # track if warnings occurred
 warn.warned = False
 
 def info(msg):
   prefix = '\033[1m\033[32mINFO\033[0m' if os.isatty(1) else 'INFO'
-  print(f'{prefix}: {msg}')
+  print('{}: {}'.format(prefix, msg))
 
 def print_verbose(x):
   if not options.verbose:
