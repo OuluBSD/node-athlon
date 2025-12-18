@@ -54,7 +54,8 @@ valid_mips_arch = ('loongson', 'r1', 'r2', 'r6', 'rx')
 valid_mips_fpu = ('fp32', 'fp64', 'fpxx')
 valid_mips_float_abi = ('soft', 'hard')
 valid_intl_modes = ('none', 'small-icu', 'full-icu', 'system-icu')
-icu_versions = json.loads(open(str(tools_path / 'icu' / 'icu_versions.json'), 'r', encoding='utf-8').read())
+with open(str(tools_path / 'icu' / 'icu_versions.json'), 'r') as f:
+    icu_versions = json.loads(f.read())
 maglev_enabled_architectures = ('x64', 'arm', 'arm64')
 
 # builtins may be removed later if they have been disabled by options
