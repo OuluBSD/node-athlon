@@ -533,7 +533,7 @@ def _cmpkey(
 
     # Versions without a post segment should sort before those with one.
     if post is None:
-        _post: CmpPrePostDevType = NegativeInfinity
+        _post = NegativeInfinity
 
     else:
         _post = post
