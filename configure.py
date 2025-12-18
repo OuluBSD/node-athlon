@@ -15,7 +15,7 @@ import io
 from pathlib import Path
 
 # If not run from node/, cd to node/.
-os.chdir(Path(__file__).parent)
+os.chdir(str(Path(__file__).parent))
 
 original_argv = sys.argv[1:]
 
