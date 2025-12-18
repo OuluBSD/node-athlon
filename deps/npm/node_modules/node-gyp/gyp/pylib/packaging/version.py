@@ -227,7 +227,7 @@ class Version(_BaseVersion):
         >>> Version('1.0.0')
         <Version('1.0.0')>
         """
-        return f"<Version('{self}')>"
+        return "<Version('{}')>".format(self)
 
     def __str__(self) -> str:
         """A string representation of the version that can be rounded-tripped.
