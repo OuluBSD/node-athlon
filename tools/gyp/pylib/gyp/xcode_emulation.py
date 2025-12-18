@@ -1347,7 +1347,8 @@ class XcodeSettings:
         if xcode_version < "0500":
             return ""
         default_sdk_path = self._XcodeSdkPath("")
-        if default_sdk_root := XcodeSettings._sdk_root_cache.get(default_sdk_path):
+        default_sdk_root = XcodeSettings._sdk_root_cache.get(default_sdk_path)
+        if default_sdk_root:
             return default_sdk_root
         try:
             all_sdks = GetStdout(["xcodebuild", "-showsdks"])
