@@ -1081,7 +1081,7 @@ parser.add_argument('--use-ccache-win',
 (options, args) = parser.parse_known_args()
 
 # Expand ~ in the install prefix now, it gets written to multiple files.
-options.prefix = str(Path(options.prefix or '').expanduser())
+options.prefix = os.path.expanduser(options.prefix or '')
 
 # set up auto-download list
 auto_downloads = nodedownload.parse(options.download_list)
