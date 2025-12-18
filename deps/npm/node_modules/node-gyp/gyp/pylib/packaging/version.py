@@ -239,7 +239,7 @@ class Version(_BaseVersion):
 
         # Epoch
         if self.epoch != 0:
-            parts.append(f"{self.epoch}!")
+            parts.append("{}!".format(self.epoch))
 
         # Release segment
         parts.append(".".join(str(x) for x in self.release))
@@ -250,15 +250,15 @@ class Version(_BaseVersion):
 
         # Post-release
         if self.post is not None:
-            parts.append(f".post{self.post}")
+            parts.append(".post{}".format(self.post))
 
         # Development release
         if self.dev is not None:
-            parts.append(f".dev{self.dev}")
+            parts.append(".dev{}".format(self.dev))
 
         # Local version segment
         if self.local is not None:
-            parts.append(f"+{self.local}")
+            parts.append("+{}".format(self.local))
 
         return "".join(parts)
 
@@ -371,7 +371,7 @@ class Version(_BaseVersion):
 
         # Epoch
         if self.epoch != 0:
-            parts.append(f"{self.epoch}!")
+            parts.append("{}!".format(self.epoch))
 
         # Release segment
         parts.append(".".join(str(x) for x in self.release))
